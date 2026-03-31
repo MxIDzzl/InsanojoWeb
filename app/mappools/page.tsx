@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 type MappoolItem = {
   id: number;
@@ -28,24 +28,20 @@ export default function MappoolsPage() {
   const [mappools, setMappools] = useState<MappoolCollection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [scale, setScale] = useState(1);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const dragRef = useRef<{ dragging: boolean; startX: number; startY: number }>({
-    dragging: false,
-    startX: 0,
-    startY: 0,
-  });
 
   async function loadMappools() {
     setLoading(true);
     setError(null);
+
     const res = await fetch("/api/mappools", { cache: "no-store" });
     const data = await res.json();
+
     if (!res.ok) {
       setError(data.error ?? "No se pudo cargar el mappool.");
       setLoading(false);
       return;
     }
+
     setMappools(data.mappools ?? []);
     setLoading(false);
   }
@@ -54,88 +50,114 @@ export default function MappoolsPage() {
     loadMappools();
   }, []);
 
-  const gridWidth = useMemo(() => Math.max(1280, mappools.length * 360 + 120), [mappools.length]);
-  const maxItems = useMemo(() => Math.max(1, ...mappools.map((pool) => pool.items.length)), [mappools]);
-  const gridHeight = Math.max(680, maxItems * 112 + 220);
-
   if (loading) return <div className="text-white/70">Cargando mappools...</div>;
 
   return (
     <div>
       <h1 className="text-4xl font-extrabold text-white tracking-tight">Mappools</h1>
-      <p className="mt-3 text-white/60">Rueda para zoom y arrastra para navegar libremente.</p>
+      <p className="mt-3 text-white/60">Vista tipo post en formato tabla (sin navegación por canvas).</p>
       {error && <p className="mt-3 text-red-300 text-sm">{error}</p>}
 
-      <div
-        className="mt-6 h-[75vh] w-full overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-[#130d22]/80 to-[#0f1020]/90 cursor-grab active:cursor-grabbing"
-        onWheel={(e) => {
-          e.preventDefault();
-          const next = e.deltaY > 0 ? scale - 0.1 : scale + 0.1;
-          setScale(Math.min(2.2, Math.max(0.45, Number(next.toFixed(2)))));
-        }}
-        onMouseDown={(e) => {
-          dragRef.current = { dragging: true, startX: e.clientX - offset.x, startY: e.clientY - offset.y };
-        }}
-        onMouseMove={(e) => {
-          if (!dragRef.current.dragging) return;
-          setOffset({ x: e.clientX - dragRef.current.startX, y: e.clientY - dragRef.current.startY });
-        }}
-        onMouseUp={() => (dragRef.current.dragging = false)}
-        onMouseLeave={() => (dragRef.current.dragging = false)}
-      >
-        <div
-          className="relative"
-          style={{
-            width: gridWidth,
-            height: gridHeight,
-            transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
-            transformOrigin: "0 0",
-          }}
-        >
-          {mappools.map((pool, colIndex) => {
-            const accent = pool.accent_color || "#a855f7";
-            return (
-              <div key={pool.id} className="absolute" style={{ left: 24 + colIndex * 340, top: 20, width: 320 }}>
-                <div className="mb-3 rounded-xl border border-white/15 bg-white/5 p-3" style={{ borderColor: `${accent}66` }}>
-                  <p className="font-bold text-white">{pool.title}</p>
-                  <p className="text-xs text-white/60">{pool.stage || "Sin etapa"}</p>
-                  {pool.drive_url && (
-                    <a href={pool.drive_url} target="_blank" rel="noreferrer" className="text-xs text-purple-200 underline">
-                      Descargar mappool completo
-                    </a>
-                  )}
-                </div>
+      <div className="mt-8 space-y-6">
+        {mappools.length === 0 && (
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/60">
+            No hay mappools publicados todavía.
+          </div>
+        )}
 
-                <div className="grid gap-2">
-                  {pool.items.map((map) => (
+        {mappools.map((pool) => {
+          const accent = pool.accent_color || "#a855f7";
+
+          return (
+            <section key={pool.id} className="rounded-2xl border border-white/10 bg-[#111522]/85 overflow-hidden">
+              <div className="px-4 py-3 border-b border-white/10" style={{ borderLeft: `5px solid ${accent}` }}>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <h2 className="text-lg font-bold text-white">{pool.title}</h2>
+                    <p className="text-xs text-white/60">{pool.stage || "Sin etapa"}</p>
+                  </div>
+                  {pool.drive_url && (
                     <a
-                      key={map.id}
-                      href={map.beatmap_url}
+                      href={pool.drive_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="relative h-[104px] overflow-hidden rounded-lg border border-white/15 bg-white/5"
+                      className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/15"
                     >
-                      {map.cover_url && (
-                        <img src={map.cover_url} alt={map.title || "cover"} className="absolute inset-0 h-full w-full object-cover opacity-35" />
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/55 to-black/30" />
-                      <div className="relative p-3">
-                        <p className="inline-flex rounded px-2 py-0.5 text-[10px] font-semibold uppercase text-white" style={{ backgroundColor: map.label_color || accent }}>
-                          {map.mods || "MOD"}
-                        </p>
-                        <p className="mt-1 line-clamp-1 text-sm font-semibold text-white">{map.title || "Beatmap"}</p>
-                        <p className="line-clamp-1 text-xs text-white/75">{map.artist || "Unknown Artist"} · {map.version || "Difficulty"}</p>
-                      </div>
+                      Descargar mappool
                     </a>
-                  ))}
-                  {pool.items.length === 0 && (
-                    <div className="rounded-lg border border-dashed border-white/20 p-3 text-xs text-white/50">Sin mapas en este bloque.</div>
                   )}
                 </div>
               </div>
-            );
-          })}
-        </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[760px] text-sm">
+                  <thead className="bg-black/35 text-white/70">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-semibold">Mod</th>
+                      <th className="px-3 py-2 text-left font-semibold">Mapa</th>
+                      <th className="px-3 py-2 text-left font-semibold">Dificultad</th>
+                      <th className="px-3 py-2 text-left font-semibold">Stars</th>
+                      <th className="px-3 py-2 text-left font-semibold">Link</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pool.items.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="px-3 py-4 text-white/50">
+                          Este bloque todavía no tiene mapas.
+                        </td>
+                      </tr>
+                    ) : (
+                      pool.items.map((map) => (
+                        <tr key={map.id} className="border-t border-white/10 align-middle hover:bg-white/5">
+                          <td className="px-3 py-3">
+                            <span
+                              className="inline-flex rounded px-2 py-1 text-[11px] font-bold uppercase text-white"
+                              style={{ backgroundColor: map.label_color || accent }}
+                            >
+                              {map.mods || "MOD"}
+                            </span>
+                          </td>
+                          <td className="px-3 py-3">
+                            <div className="flex items-center gap-3">
+                              {map.cover_url ? (
+                                <img
+                                  src={map.cover_url}
+                                  alt={map.title || "cover"}
+                                  className="h-10 w-16 rounded object-cover border border-white/20"
+                                />
+                              ) : (
+                                <div className="h-10 w-16 rounded bg-white/10 border border-white/20" />
+                              )}
+                              <div>
+                                <p className="font-semibold text-white">{map.title || "Beatmap"}</p>
+                                <p className="text-xs text-white/60">{map.artist || "Unknown Artist"}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-3 py-3 text-white/80">{map.version || "Unknown Difficulty"}</td>
+                          <td className="px-3 py-3 text-white/70">
+                            {typeof map.star_rating === "number" ? map.star_rating.toFixed(2) : "-"}
+                          </td>
+                          <td className="px-3 py-3">
+                            <a
+                              href={map.beatmap_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-purple-200 underline underline-offset-2"
+                            >
+                              Abrir
+                            </a>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          );
+        })}
       </div>
     </div>
   );
