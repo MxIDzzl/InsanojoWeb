@@ -52,8 +52,19 @@
 }
 
 body {
-  background: radial-gradient(circle at top, #1a062a 0%, #05010a 60%);
+  background:
+    radial-gradient(1000px 600px at -10% -10%, rgba(168, 85, 247, 0.33), transparent 60%),
+    radial-gradient(1200px 700px at 100% -20%, rgba(59, 130, 246, 0.22), transparent 65%),
+    radial-gradient(900px 600px at 50% 120%, rgba(239, 68, 68, 0.14), transparent 70%),
+    linear-gradient(180deg, #07070b 0%, #04040a 55%, #020205 100%);
   color: white;
+  min-height: 100vh;
+  text-rendering: geometricPrecision;
+}
+
+::selection {
+  background: rgba(168, 85, 247, 0.35);
+  color: #fff;
 }
 
 :root {
@@ -134,5 +145,33 @@ body {
   }
   html {
     @apply font-sans;
+  }
+}
+
+@layer utilities {
+  .imc-surface {
+    @apply border border-white/10 bg-zinc-900/70 backdrop-blur;
+  }
+
+  .imc-panel {
+    @apply rounded-2xl border border-white/10 bg-gradient-to-b from-zinc-900/80 to-zinc-950/85 shadow-[0_20px_80px_-45px_rgba(168,85,247,0.55)];
+  }
+
+  .imc-section-title {
+    @apply text-2xl sm:text-3xl font-black tracking-tight text-white;
+  }
+
+  .imc-grid-lines {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 34px 34px;
+  }
+
+  .imc-title-gradient {
+    background: linear-gradient(90deg, #ffffff 0%, #c084fc 35%, #60a5fa 60%, #f43f5e 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 }

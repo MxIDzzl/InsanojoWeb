@@ -1,7 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import Navbar from "@/components/navbar";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { verifySessionToken } from "@/lib/auth";
 import { getMaintenanceConfig } from "@/lib/site-maintenance";
 import MaintenanceCountdown from "@/components/maintenance-countdown";
@@ -21,28 +21,52 @@ export default async function RootLayout({
 }) {
   const maintenance = await getMaintenanceConfig();
   const cookieStore = await cookies();
+  const headerStore = await headers();
   const token = cookieStore.get("session")?.value;
 
   let isStaff = false;
+  let sessionUser: { id?: number; username?: string } | null = null;
   if (token) {
     try {
-      const user: any = verifySessionToken(token);
+      const user = verifySessionToken(token) as { role?: string | null; id?: number; username?: string };
+      sessionUser = user;
       isStaff = user?.role === "owner" || user?.role === "host";
     } catch {
       isStaff = false;
+      sessionUser = null;
     }
   }
 
-  const maintenanceEnabledForUser = maintenance.maintenance_enabled && !isStaff;
+  const forwardedFor = headerStore.get("x-forwarded-for") ?? "";
+  const requestIp = forwardedFor.split(",")[0]?.trim() || null;
+  const whitelist = (maintenance.maintenance_whitelist_text ?? "")
+    .split(/[\n,]/)
+    .map((entry) => entry.trim().toLowerCase())
+    .filter(Boolean);
+  const whitelisted =
+    Boolean(sessionUser?.id && whitelist.includes(String(sessionUser.id).toLowerCase())) ||
+    Boolean(sessionUser?.username && whitelist.includes(sessionUser.username.toLowerCase())) ||
+    Boolean(requestIp && whitelist.includes(requestIp.toLowerCase()));
+
+  const maintenanceEnabledForUser = maintenance.maintenance_enabled && !isStaff && !whitelisted;
+  const template = maintenance.maintenance_template ?? "default";
+  const templateClasses =
+    template === "warning"
+      ? "rounded-2xl border border-amber-400/30 bg-amber-500/10 p-8"
+      : template === "minimal"
+        ? "rounded-2xl border border-white/10 bg-black/25 p-8"
+        : "rounded-2xl border border-purple-400/20 bg-purple-500/10 p-8";
 
   return (
     <html lang="es">
       <body className="min-h-screen bg-[#05010a] text-white">
+        <div className="h-1.5 w-full bg-gradient-to-r from-red-500 via-orange-400 via-yellow-300 via-green-400 via-blue-400 to-purple-500" />
         {!maintenanceEnabledForUser && <Navbar />}
 
-        <main className="max-w-6xl mx-auto px-6 py-10">
+        <main className="relative max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+          <div className="pointer-events-none absolute inset-0 -z-10 imc-grid-lines opacity-[0.07]" />
           {maintenanceEnabledForUser ? (
-            <div className="py-20">
+            <div className={`py-20 ${templateClasses} imc-panel`}>
               <h1 className="text-4xl font-extrabold text-white tracking-tight">Sitio en mantenimiento</h1>
               <p className="mt-4 text-white/70 max-w-2xl">
                 {maintenance.maintenance_message ??
@@ -58,7 +82,7 @@ export default async function RootLayout({
         </main>
 
         <footer className="w-full border-t border-white/10 mt-16 bg-black/30">
-          <div className="max-w-6xl mx-auto px-6 py-6 text-sm text-white/50 flex justify-between">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 text-sm text-white/50 flex flex-col sm:flex-row gap-2 justify-between">
             <p>© {new Date().getFullYear()} Insanojo Mania 4K Cup</p>
             <p className="text-purple-300/70">Website by Vexx</p>
           </div>
