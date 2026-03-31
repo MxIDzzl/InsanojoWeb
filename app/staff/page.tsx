@@ -43,6 +43,34 @@ type Action = {
   loading: boolean;
 };
 
+type MappoolCollection = {
+  id: number;
+  title: string;
+  stage: string | null;
+  accent_color: string | null;
+  drive_url: string | null;
+  items: { id: number; title: string | null; mods: string | null; beatmap_url: string; }[];
+};
+
+type BracketNode = {
+  id: number;
+  stage: string | null;
+  scheduled_at: string | null;
+  x: number;
+  y: number;
+  team1: string | null;
+  team2: string | null;
+  score1: number | null;
+  score2: number | null;
+  best_of: number | null;
+};
+
+type BracketEdge = {
+  id: number;
+  source_id: number;
+  target_id: number;
+};
+
 const ROUNDS = [
   { value: "qualifier", label: "Qualifier" },
   { value: "playoffs", label: "Playoffs" },
@@ -78,6 +106,30 @@ export default function StaffPage() {
   const [maintenanceMessage, setMaintenanceMessage] = useState("");
   const [savingMaintenance, setSavingMaintenance] = useState(false);
   const [maintenanceError, setMaintenanceError] = useState<string | null>(null);
+  const [mappools, setMappools] = useState<MappoolCollection[]>([]);
+  const [poolTitle, setPoolTitle] = useState("");
+  const [poolStage, setPoolStage] = useState("");
+  const [poolColor, setPoolColor] = useState("#a855f7");
+  const [poolDrive, setPoolDrive] = useState("");
+  const [poolTargetId, setPoolTargetId] = useState("");
+  const [poolBeatmapUrl, setPoolBeatmapUrl] = useState("");
+  const [poolMods, setPoolMods] = useState("");
+  const [poolItemColor, setPoolItemColor] = useState("#a855f7");
+  const [poolError, setPoolError] = useState<string | null>(null);
+  const [bracketNodes, setBracketNodes] = useState<BracketNode[]>([]);
+  const [bracketEdges, setBracketEdges] = useState<BracketEdge[]>([]);
+  const [nodeStage, setNodeStage] = useState("");
+  const [nodeDate, setNodeDate] = useState("");
+  const [nodeX, setNodeX] = useState("0");
+  const [nodeY, setNodeY] = useState("0");
+  const [nodeTeam1, setNodeTeam1] = useState("");
+  const [nodeTeam2, setNodeTeam2] = useState("");
+  const [nodeScore1, setNodeScore1] = useState("0");
+  const [nodeScore2, setNodeScore2] = useState("0");
+  const [nodeBestOf, setNodeBestOf] = useState("9");
+  const [edgeSourceId, setEdgeSourceId] = useState("");
+  const [edgeTargetId, setEdgeTargetId] = useState("");
+  const [bracketError, setBracketError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -133,6 +185,15 @@ export default function StaffPage() {
           setMaintenanceEndsAt("");
         }
       }
+
+      const poolsRes = await fetch("/api/mappools");
+      const poolsData = await poolsRes.json();
+      setMappools(poolsData.mappools ?? []);
+
+      const bracketRes = await fetch("/api/bracket");
+      const bracketData = await bracketRes.json();
+      setBracketNodes(bracketData.nodes ?? []);
+      setBracketEdges(bracketData.edges ?? []);
 
       setPageLoading(false);
     }
@@ -230,6 +291,112 @@ export default function StaffPage() {
     }
 
     setSavingMaintenance(false);
+  }
+
+
+  async function refreshMappools() {
+    const res = await fetch("/api/mappools", { cache: "no-store" });
+    const data = await res.json();
+    setMappools(data.mappools ?? []);
+  }
+
+  async function refreshBracket() {
+    const res = await fetch("/api/bracket", { cache: "no-store" });
+    const data = await res.json();
+    setBracketNodes(data.nodes ?? []);
+    setBracketEdges(data.edges ?? []);
+  }
+
+  async function handleCreateMappool() {
+    setPoolError(null);
+    const res = await fetch("/api/staff/mappools", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "create_collection",
+        title: poolTitle,
+        stage: poolStage,
+        accent_color: poolColor,
+        drive_url: poolDrive,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) return setPoolError(data.error ?? "No se pudo crear bloque.");
+    setPoolTitle("");
+    setPoolStage("");
+    setPoolDrive("");
+    await refreshMappools();
+  }
+
+  async function handleAddBeatmap() {
+    setPoolError(null);
+    const res = await fetch("/api/staff/mappools", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "add_item",
+        collection_id: Number(poolTargetId),
+        beatmap_url: poolBeatmapUrl,
+        mods: poolMods,
+        label_color: poolItemColor,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) return setPoolError(data.error ?? "No se pudo agregar mapa.");
+    setPoolBeatmapUrl("");
+    setPoolMods("");
+    await refreshMappools();
+  }
+
+  async function handleCreateBracketNode() {
+    setBracketError(null);
+    const scheduledAt = nodeDate ? new Date(nodeDate).toISOString() : null;
+    const res = await fetch("/api/staff/bracket", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "upsert_node",
+        stage: nodeStage,
+        scheduled_at: scheduledAt,
+        x: Number(nodeX),
+        y: Number(nodeY),
+        team1: nodeTeam1,
+        team2: nodeTeam2,
+        score1: Number(nodeScore1),
+        score2: Number(nodeScore2),
+        best_of: Number(nodeBestOf),
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) return setBracketError(data.error ?? "No se pudo crear duelo.");
+    await refreshBracket();
+  }
+
+  async function handleCreateEdge() {
+    setBracketError(null);
+    const res = await fetch("/api/staff/bracket", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "add_edge",
+        source_id: Number(edgeSourceId),
+        target_id: Number(edgeTargetId),
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) return setBracketError(data.error ?? "No se pudo conectar nodos.");
+    await refreshBracket();
+  }
+
+
+  async function handleDeleteMappool(id: number) {
+    await fetch(`/api/staff/mappools?type=collection&id=${id}`, { method: "DELETE" });
+    await refreshMappools();
+  }
+
+  async function handleDeleteBracketNode(id: number) {
+    await fetch(`/api/staff/bracket?type=node&id=${id}`, { method: "DELETE" });
+    await refreshBracket();
   }
 
   if (pageLoading) return <div className="text-white/70">Cargando...</div>;
@@ -427,6 +594,87 @@ export default function StaffPage() {
           })
         )}
       </div>
+
+      {/* ── Mappools custom ── */}
+      <h2 className="mt-14 text-2xl font-bold text-white">Mappools (editor staff)</h2>
+      <p className="mt-2 text-white/50 text-sm">Crea bloques personalizados y pega links de osu!, el sistema detecta la info automáticamente.</p>
+      <Card className="mt-4 rounded-2xl bg-white/5 border-white/10">
+        <CardContent className="p-6 grid gap-3">
+          <div className="grid md:grid-cols-2 gap-3">
+            <input value={poolTitle} onChange={(e) => setPoolTitle(e.target.value)} placeholder="Título del bloque" className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
+            <input value={poolStage} onChange={(e) => setPoolStage(e.target.value)} placeholder="Etapa (ej. Quarterfinals)" className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
+            <input type="color" value={poolColor} onChange={(e) => setPoolColor(e.target.value)} className="h-10 rounded-lg bg-transparent" />
+            <input value={poolDrive} onChange={(e) => setPoolDrive(e.target.value)} placeholder="Link de Drive del mappool" className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
+          </div>
+          <Button className="w-fit rounded-xl bg-purple-600 hover:bg-purple-500" onClick={handleCreateMappool}>Crear bloque</Button>
+
+          <div className="mt-2 grid md:grid-cols-2 gap-3">
+            <select value={poolTargetId} onChange={(e) => setPoolTargetId(e.target.value)} className="bg-white/5 border border-white/10 text-white p-2 rounded-lg">
+              <option value="">Selecciona bloque destino</option>
+              {mappools.map((pool) => <option key={pool.id} value={pool.id}>{pool.title}</option>)}
+            </select>
+            <input value={poolBeatmapUrl} onChange={(e) => setPoolBeatmapUrl(e.target.value)} placeholder="https://osu.ppy.sh/beatmapsets/..." className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
+            <input value={poolMods} onChange={(e) => setPoolMods(e.target.value)} placeholder="Etiqueta mod (NM1, DT2, etc.)" className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
+            <input type="color" value={poolItemColor} onChange={(e) => setPoolItemColor(e.target.value)} className="h-10 rounded-lg bg-transparent" />
+          </div>
+          <Button className="w-fit rounded-xl" onClick={handleAddBeatmap}>Agregar mapa al bloque</Button>
+          {poolError && <p className="text-sm text-red-300">{poolError}</p>}
+
+          <div className="mt-2 grid gap-2">
+            {mappools.map((pool) => (
+              <div key={pool.id} className="rounded-lg border border-white/10 p-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-white font-semibold">{pool.title} <span className="text-white/50 text-xs">({pool.stage || "sin etapa"})</span></p>
+                  <p className="text-xs text-white/60">{pool.items.length} mapas</p>
+                </div>
+                <Button variant="destructive" className="rounded-xl" onClick={() => handleDeleteMappool(pool.id)}>Eliminar</Button>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── Bracket custom ── */}
+      <h2 className="mt-14 text-2xl font-bold text-white">Bracket (editor staff)</h2>
+      <p className="mt-2 text-white/50 text-sm">Crea duelos manualmente, define etapa/fecha y conecta cada bloque.</p>
+      <Card className="mt-4 rounded-2xl bg-white/5 border-white/10">
+        <CardContent className="p-6 grid gap-3">
+          <div className="grid md:grid-cols-3 gap-3">
+            <input value={nodeStage} onChange={(e) => setNodeStage(e.target.value)} placeholder="Etapa (R16, QF...)" className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
+            <input type="datetime-local" value={nodeDate} onChange={(e) => setNodeDate(e.target.value)} className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
+            <input value={nodeBestOf} onChange={(e) => setNodeBestOf(e.target.value)} placeholder="Best of" className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
+            <input value={nodeTeam1} onChange={(e) => setNodeTeam1(e.target.value)} placeholder="Team 1" className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
+            <input value={nodeTeam2} onChange={(e) => setNodeTeam2(e.target.value)} placeholder="Team 2" className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
+            <input value={nodeX} onChange={(e) => setNodeX(e.target.value)} placeholder="Posición X" className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
+            <input value={nodeY} onChange={(e) => setNodeY(e.target.value)} placeholder="Posición Y" className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
+            <input value={nodeScore1} onChange={(e) => setNodeScore1(e.target.value)} placeholder="Score 1" className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
+            <input value={nodeScore2} onChange={(e) => setNodeScore2(e.target.value)} placeholder="Score 2" className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
+          </div>
+          <Button className="w-fit rounded-xl bg-indigo-600 hover:bg-indigo-500" onClick={handleCreateBracketNode}>Crear duelo</Button>
+
+          <div className="grid md:grid-cols-2 gap-3 mt-2">
+            <select value={edgeSourceId} onChange={(e) => setEdgeSourceId(e.target.value)} className="bg-white/5 border border-white/10 text-white p-2 rounded-lg">
+              <option value="">Nodo origen</option>
+              {bracketNodes.map((node) => <option key={`s-${node.id}`} value={node.id}>#{node.id} {node.team1 || "TBD"} vs {node.team2 || "TBD"}</option>)}
+            </select>
+            <select value={edgeTargetId} onChange={(e) => setEdgeTargetId(e.target.value)} className="bg-white/5 border border-white/10 text-white p-2 rounded-lg">
+              <option value="">Nodo destino</option>
+              {bracketNodes.map((node) => <option key={`t-${node.id}`} value={node.id}>#{node.id} {node.stage || "Etapa"}</option>)}
+            </select>
+          </div>
+          <Button className="w-fit rounded-xl" onClick={handleCreateEdge}>Conectar duelos</Button>
+          {bracketError && <p className="text-sm text-red-300">{bracketError}</p>}
+          <p className="text-xs text-white/60">Duelos actuales: {bracketNodes.length} · Conexiones: {bracketEdges.length}</p>
+          <div className="grid gap-2">
+            {bracketNodes.map((node) => (
+              <div key={node.id} className="rounded-lg border border-white/10 p-2 flex items-center justify-between gap-2">
+                <p className="text-xs text-white/70">#{node.id} · {node.stage || "Etapa"} · {node.team1 || "TBD"} vs {node.team2 || "TBD"}</p>
+                <Button variant="destructive" className="rounded-xl" onClick={() => handleDeleteBracketNode(node.id)}>Eliminar</Button>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* ── Modo mantenimiento ── */}
       <h2 className="mt-14 text-2xl font-bold text-white">Modo mantenimiento</h2>

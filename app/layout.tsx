@@ -9,6 +9,9 @@ import MaintenanceCountdown from "@/components/maintenance-countdown";
 export const metadata: Metadata = {
   title: "Insanojo Mania 4K Cup",
   description: "Torneo competitivo de osu!mania 4K",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default async function RootLayout({

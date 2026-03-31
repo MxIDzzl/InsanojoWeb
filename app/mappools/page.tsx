@@ -1,30 +1,33 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-type Beatmap = {
-  ID: number;
-  Mods?: string;
-  BeatmapInfo?: {
-    Metadata?: { Title?: string; Artist?: string };
-    DifficultyName?: string;
-    Covers?: { "card@2x"?: string; "cover@2x"?: string };
-  };
+type MappoolItem = {
+  id: number;
+  beatmap_url: string;
+  mods: string | null;
+  label_color: string | null;
+  beatmap_id: number | null;
+  title: string | null;
+  artist: string | null;
+  version: string | null;
+  cover_url: string | null;
+  star_rating: number | null;
 };
 
-type Round = {
-  Name: string;
-  BestOf?: number;
-  BanCount?: number;
-  Beatmaps: Beatmap[];
-};
-
-type BracketData = {
-  Rounds: Round[];
+type MappoolCollection = {
+  id: number;
+  title: string;
+  stage: string | null;
+  accent_color: string | null;
+  drive_url: string | null;
+  items: MappoolItem[];
 };
 
 export default function MappoolsPage() {
-  const [rounds, setRounds] = useState<Round[]>([]);
+  const [mappools, setMappools] = useState<MappoolCollection[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const dragRef = useRef<{ dragging: boolean; startX: number; startY: number }>({
@@ -33,37 +36,42 @@ export default function MappoolsPage() {
     startY: 0,
   });
 
-  useEffect(() => {
-    async function load() {
-      const res = await fetch("/bracket.json");
-      if (!res.ok) return;
-      const data: BracketData = await res.json();
-      setRounds(data.Rounds ?? []);
+  async function loadMappools() {
+    setLoading(true);
+    setError(null);
+    const res = await fetch("/api/mappools", { cache: "no-store" });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error ?? "No se pudo cargar el mappool.");
+      setLoading(false);
+      return;
     }
-    load();
+    setMappools(data.mappools ?? []);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    loadMappools();
   }, []);
 
-  const cardW = 300;
-  const cardH = 95;
-  const colW = 340;
+  const gridWidth = useMemo(() => Math.max(1280, mappools.length * 360 + 120), [mappools.length]);
+  const maxItems = useMemo(() => Math.max(1, ...mappools.map((pool) => pool.items.length)), [mappools]);
+  const gridHeight = Math.max(680, maxItems * 112 + 220);
 
-  const maxMaps = Math.max(1, ...rounds.map((r) => r.Beatmaps?.length ?? 0));
-  const width = Math.max(1200, rounds.length * colW + 100);
-  const height = Math.max(700, maxMaps * cardH + 180);
+  if (loading) return <div className="text-white/70">Cargando mappools...</div>;
 
   return (
     <div>
       <h1 className="text-4xl font-extrabold text-white tracking-tight">Mappools</h1>
-      <p className="mt-3 text-white/60">
-        Cargado desde <code>bracket.json</code>. Rueda para zoom, arrastra para moverte libremente.
-      </p>
+      <p className="mt-3 text-white/60">Rueda para zoom y arrastra para navegar libremente.</p>
+      {error && <p className="mt-3 text-red-300 text-sm">{error}</p>}
 
       <div
-        className="mt-6 h-[75vh] w-full overflow-hidden rounded-2xl border border-white/10 bg-[#0b0712] cursor-grab active:cursor-grabbing"
+        className="mt-6 h-[75vh] w-full overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-[#130d22]/80 to-[#0f1020]/90 cursor-grab active:cursor-grabbing"
         onWheel={(e) => {
           e.preventDefault();
           const next = e.deltaY > 0 ? scale - 0.1 : scale + 0.1;
-          setScale(Math.min(2.5, Math.max(0.4, Number(next.toFixed(2)))));
+          setScale(Math.min(2.2, Math.max(0.45, Number(next.toFixed(2)))));
         }}
         onMouseDown={(e) => {
           dragRef.current = { dragging: true, startX: e.clientX - offset.x, startY: e.clientY - offset.y };
@@ -78,58 +86,55 @@ export default function MappoolsPage() {
         <div
           className="relative"
           style={{
-            width,
-            height,
+            width: gridWidth,
+            height: gridHeight,
             transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
             transformOrigin: "0 0",
           }}
         >
-          {rounds.map((round, colIndex) => (
-            <div key={round.Name} className="absolute" style={{ left: 30 + colIndex * colW, top: 20, width: cardW }}>
-              <div className="mb-3 rounded-xl border border-white/10 bg-white/5 p-3">
-                <p className="font-bold text-purple-300">{round.Name}</p>
-                <p className="text-xs text-white/60">
-                  BO{round.BestOf ?? "-"} · Bans: {round.BanCount ?? 0}
-                </p>
-              </div>
+          {mappools.map((pool, colIndex) => {
+            const accent = pool.accent_color || "#a855f7";
+            return (
+              <div key={pool.id} className="absolute" style={{ left: 24 + colIndex * 340, top: 20, width: 320 }}>
+                <div className="mb-3 rounded-xl border border-white/15 bg-white/5 p-3" style={{ borderColor: `${accent}66` }}>
+                  <p className="font-bold text-white">{pool.title}</p>
+                  <p className="text-xs text-white/60">{pool.stage || "Sin etapa"}</p>
+                  {pool.drive_url && (
+                    <a href={pool.drive_url} target="_blank" rel="noreferrer" className="text-xs text-purple-200 underline">
+                      Descargar mappool completo
+                    </a>
+                  )}
+                </div>
 
-              <div className="grid gap-2">
-                {(round.Beatmaps ?? []).map((map) => {
-                  const cover = map.BeatmapInfo?.Covers?.["card@2x"] || map.BeatmapInfo?.Covers?.["cover@2x"];
-                  return (
-                    <div
-                      key={map.ID}
-                      className="relative h-[88px] overflow-hidden rounded-lg border border-white/10 bg-white/5"
+                <div className="grid gap-2">
+                  {pool.items.map((map) => (
+                    <a
+                      key={map.id}
+                      href={map.beatmap_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="relative h-[104px] overflow-hidden rounded-lg border border-white/15 bg-white/5"
                     >
-                      {cover && (
-                        <img
-                          src={cover}
-                          alt={map.BeatmapInfo?.Metadata?.Title ?? "cover"}
-                          className="absolute inset-0 h-full w-full object-cover opacity-35"
-                        />
+                      {map.cover_url && (
+                        <img src={map.cover_url} alt={map.title || "cover"} className="absolute inset-0 h-full w-full object-cover opacity-35" />
                       )}
-                      <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/65 to-black/30" />
+                      <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/55 to-black/30" />
                       <div className="relative p-3">
-                        <p className="text-[10px] text-purple-300 font-semibold uppercase">{map.Mods ?? "MOD"}</p>
-                        <p className="text-sm text-white font-semibold line-clamp-1">
-                          {map.BeatmapInfo?.Metadata?.Title ?? `Beatmap ${map.ID}`}
+                        <p className="inline-flex rounded px-2 py-0.5 text-[10px] font-semibold uppercase text-white" style={{ backgroundColor: map.label_color || accent }}>
+                          {map.mods || "MOD"}
                         </p>
-                        <p className="text-xs text-white/70 line-clamp-1">
-                          {map.BeatmapInfo?.Metadata?.Artist ?? "Unknown Artist"} · {map.BeatmapInfo?.DifficultyName ?? "Difficulty"}
-                        </p>
+                        <p className="mt-1 line-clamp-1 text-sm font-semibold text-white">{map.title || "Beatmap"}</p>
+                        <p className="line-clamp-1 text-xs text-white/75">{map.artist || "Unknown Artist"} · {map.version || "Difficulty"}</p>
                       </div>
-                    </div>
-                  );
-                })}
-
-                {round.Beatmaps.length === 0 && (
-                  <div className="rounded-lg border border-dashed border-white/20 p-3 text-xs text-white/50">
-                    Sin mappool cargado en esta ronda.
-                  </div>
-                )}
+                    </a>
+                  ))}
+                  {pool.items.length === 0 && (
+                    <div className="rounded-lg border border-dashed border-white/20 p-3 text-xs text-white/50">Sin mapas en este bloque.</div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
