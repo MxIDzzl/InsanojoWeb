@@ -4,14 +4,15 @@ import { verifySessionToken } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { getMaintenanceConfig } from "@/lib/site-maintenance";
 import { logStaffAudit } from "@/lib/staff-audit";
+import type { SessionUser } from "@/lib/staff-auth";
 
 export async function GET() {
   const token = (await cookies()).get("session")?.value;
   if (!token) return NextResponse.json({ error: "No autenticado." }, { status: 401 });
 
-  let user: { id: number; role?: string | null };
+  let user: SessionUser;
   try {
-    user = verifySessionToken(token);
+    user = verifySessionToken(token) as SessionUser;
   } catch {
     return NextResponse.json({ error: "Sesión inválida." }, { status: 401 });
   }
@@ -28,9 +29,9 @@ export async function POST(req: Request) {
   const token = (await cookies()).get("session")?.value;
   if (!token) return NextResponse.json({ error: "No autenticado." }, { status: 401 });
 
-  let user: { id: number; role?: string | null };
+  let user: SessionUser;
   try {
-    user = verifySessionToken(token);
+    user = verifySessionToken(token) as SessionUser;
   } catch {
     return NextResponse.json({ error: "Sesión inválida." }, { status: 401 });
   }

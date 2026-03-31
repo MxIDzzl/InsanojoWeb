@@ -293,66 +293,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  if (body.type === "preview_item") {
-    const { collection_id, beatmap_url } = body;
-    if (!beatmap_url?.trim()) {
-      return NextResponse.json({ error: "beatmap_url es obligatorio." }, { status: 400 });
-    }
-
-    let resolved;
-    try {
-      resolved = await resolveBeatmap(beatmap_url.trim());
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "No se pudo resolver beatmap.";
-      return NextResponse.json({ error: message }, { status: 400 });
-    }
-
-    let duplicate = false;
-    if (collection_id) {
-      const { data: existingItems } = await supabase
-        .from("mappool_items")
-        .select("id, beatmap_id, beatmap_url")
-        .eq("collection_id", Number(collection_id));
-      duplicate = (existingItems ?? []).some((item) =>
-        resolved.beatmap_id
-          ? item.beatmap_id === resolved.beatmap_id
-          : item.beatmap_url === resolved.beatmap_url
-      );
-    }
-
-    return NextResponse.json({
-      ok: true,
-      preview: {
-        ...resolved,
-        is_mania: resolved.mode === null ? null : resolved.mode === "mania",
-        is_duplicate: duplicate,
-      },
-    });
-  }
-
-  if (body.type === "reorder_items") {
-    const { collection_id, ordered_item_ids } = body;
-    if (!collection_id || !Array.isArray(ordered_item_ids)) {
-      return NextResponse.json(
-        { error: "collection_id y ordered_item_ids son obligatorios." },
-        { status: 400 }
-      );
-    }
-
-    const uniqueIds = Array.from(new Set(ordered_item_ids.map((id: unknown) => Number(id)))).filter(Boolean);
-
-    for (const [index, itemId] of uniqueIds.entries()) {
-      const { error } = await supabase
-        .from("mappool_items")
-        .update({ sort_order: index })
-        .eq("id", itemId)
-        .eq("collection_id", Number(collection_id));
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ ok: true });
-  }
-
   return NextResponse.json({ error: "Operación no soportada." }, { status: 400 });
 }
 
