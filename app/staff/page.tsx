@@ -20,8 +20,7 @@ type Registration = {
   users: {
     username: string;
     avatar_url: string;
-    country_code: string;
-  };
+  } | null;
 };
 
 type Participant = {
@@ -33,8 +32,7 @@ type Participant = {
   users: {
     username: string;
     avatar_url: string;
-    country_code: string;
-  };
+  } | null;
 };
 
 type Action = {

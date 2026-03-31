@@ -12,15 +12,32 @@ export async function GET() {
       eliminated,
       users:users!registrations_osu_id_fkey (
         username,
-        avatar_url,
-        country_code
+        avatar_url
       )
     `)
     .eq("status", "accepted")
     .order("created_at", { ascending: true });
 
   if (error) {
-    return NextResponse.json({ error: "Error al obtener participantes." }, { status: 500 });
+    const fallback = await supabase
+      .from("registrations")
+      .select("id, osu_id, discord_username, round, eliminated")
+      .eq("status", "accepted")
+      .order("created_at", { ascending: true });
+
+    if (fallback.error) {
+      return NextResponse.json(
+        { error: `Error al obtener participantes. ${fallback.error.message}` },
+        { status: 500 }
+      );
+    }
+
+    const normalized = (fallback.data ?? []).map((participant) => ({
+      ...participant,
+      users: null,
+    }));
+
+    return NextResponse.json({ participants: normalized });
   }
 
   return NextResponse.json({ participants: data });
