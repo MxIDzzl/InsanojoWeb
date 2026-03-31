@@ -12,6 +12,7 @@ type Participant = {
   users: {
     username: string;
     avatar_url: string;
+    country_code?: string | null;
   } | null;
 };
 
