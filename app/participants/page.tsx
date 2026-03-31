@@ -12,8 +12,8 @@ type Participant = {
   users: {
     username: string;
     avatar_url: string;
-    country_code: string;
-  };
+    country_code?: string | null;
+  } | null;
 };
 
 const roundLabel: Record<string, string> = {
@@ -67,7 +67,10 @@ export default function ParticipantsPage() {
         </Card>
       ) : (
         <div className="mt-8 grid gap-4">
-          {participants.map((p) => (
+          {participants.map((p) => {
+            const username = p.users?.username ?? `osu! ID ${p.osu_id}`;
+            const avatarUrl = p.users?.avatar_url ?? "https://a.ppy.sh";
+            return (
             <Card
               key={p.id}
               className={`rounded-2xl border ${
@@ -79,8 +82,8 @@ export default function ParticipantsPage() {
               <CardContent className="p-5 flex items-center gap-5">
                 {/* Avatar */}
                 <img
-                  src={p.users.avatar_url}
-                  alt={p.users.username}
+                  src={avatarUrl}
+                  alt={username}
                   className={`w-16 h-16 rounded-full flex-shrink-0 ${
                     p.eliminated ? "grayscale opacity-50" : ""
                   }`}
@@ -91,7 +94,7 @@ export default function ParticipantsPage() {
                   <div>
                     <p className="text-xs text-white/40 uppercase tracking-wider">Nombre</p>
                     <p className={`font-bold text-lg ${p.eliminated ? "text-white/40" : "text-white"}`}>
-                      {p.users.username}
+                      {username}
                     </p>
                   </div>
 
@@ -112,7 +115,7 @@ export default function ParticipantsPage() {
                   <div>
                     <p className="text-xs text-white/40 uppercase tracking-wider">País</p>
                     <p className={`font-medium ${p.eliminated ? "text-white/40" : "text-white/80"}`}>
-                      {p.users.country_code}
+                      —
                     </p>
                   </div>
                 </div>
@@ -137,7 +140,8 @@ export default function ParticipantsPage() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
