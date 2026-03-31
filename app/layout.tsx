@@ -62,7 +62,7 @@ export default async function RootLayout({
       <body className="min-h-screen bg-[#05010a] text-white">
         {!maintenanceEnabledForUser && <Navbar />}
 
-        <main className="max-w-6xl mx-auto px-6 py-10">
+        <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
           {maintenanceEnabledForUser ? (
             <div className={`py-20 ${templateClasses}`}>
               <h1 className="text-4xl font-extrabold text-white tracking-tight">Sitio en mantenimiento</h1>
@@ -80,7 +80,7 @@ export default async function RootLayout({
         </main>
 
         <footer className="w-full border-t border-white/10 mt-16 bg-black/30">
-          <div className="max-w-6xl mx-auto px-6 py-6 text-sm text-white/50 flex justify-between">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 text-sm text-white/50 flex flex-col sm:flex-row gap-2 justify-between">
             <p>© {new Date().getFullYear()} Insanojo Mania 4K Cup</p>
             <p className="text-purple-300/70">Website by Vexx</p>
           </div>

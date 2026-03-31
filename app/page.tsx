@@ -45,20 +45,18 @@ export default async function Home() {
           <div className="absolute -bottom-40 -right-40 w-[600px] h-[600px] rounded-full bg-fuchsia-500/10 blur-3xl" />
         </div>
 
-        <div className="relative max-w-6xl mx-auto px-6 py-20 grid lg:grid-cols-2 gap-12 items-center">
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-14 sm:py-20 grid lg:grid-cols-2 gap-10 sm:gap-12 items-center">
           {/* Left side text */}
           <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-white/60">
+            <p className="text-xs sm:text-sm uppercase tracking-[0.2em] text-white/60">
               Torneo competitivo de osu!mania 4K
             </p>
 
-            <h1 className="mt-4 text-5xl md:text-6xl font-extrabold leading-tight tracking-tight">
-              <span className="text-white">Insanojo</span>{" "}
-              <span className="text-purple-300">Mania</span>{" "}
-              <span className="text-white">4K Cup</span>
+            <h1 className="mt-4 text-4xl sm:text-5xl md:text-6xl font-extrabold leading-tight tracking-tight">
+              <span className="imc-title-gradient">Insanojo Mania 4K Cup</span>
             </h1>
 
-            <p className="mt-6 text-lg text-white/70 max-w-xl">
+            <p className="mt-6 text-base sm:text-lg text-white/70 max-w-xl">
               Torneo competitivo diseñado para jugadores serios: mappools
               balanceados, calendario organizado y bracket profesional.
             </p>
@@ -67,7 +65,7 @@ export default async function Home() {
             <div className="mt-10 flex flex-wrap gap-4">
               <Button
                 asChild
-                className="rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-semibold px-7 py-6 shadow-lg shadow-purple-500/25"
+                className="rounded-2xl bg-gradient-to-r from-purple-600 via-fuchsia-600 to-red-500 text-white font-semibold px-6 sm:px-7 py-5 sm:py-6 shadow-lg shadow-purple-500/25"
               >
                 <Link href="/login">Iniciar sesión con osu!</Link>
               </Button>
@@ -75,7 +73,7 @@ export default async function Home() {
               <Button
                 asChild
                 variant="outline"
-                className="rounded-2xl border-white/20 text-white bg-transparent hover:bg-white/10 hover:text-white px-7 py-6"
+                className="rounded-2xl border-white/20 text-white bg-transparent hover:bg-white/10 hover:text-white px-6 sm:px-7 py-5 sm:py-6"
               >
                 <Link href="/bracket">Ver Bracket</Link>
               </Button>
@@ -83,7 +81,7 @@ export default async function Home() {
               <Button
                 asChild
                 variant="outline"
-                className="rounded-2xl border-white/20 text-white bg-transparent hover:bg-white/10 hover:text-white px-7 py-6"
+                className="rounded-2xl border-white/20 text-white bg-transparent hover:bg-white/10 hover:text-white px-6 sm:px-7 py-5 sm:py-6"
               >
                 <Link href="/rules">Reglas</Link>
               </Button>
@@ -91,28 +89,28 @@ export default async function Home() {
 
             {/* Info bar */}
             <div className="mt-12 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-xl">
-              <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+              <div className="rounded-2xl bg-zinc-900/70 border border-white/10 p-4">
                 <p className="text-xs text-white/50 uppercase tracking-wide">
                   Estado
                 </p>
                 <p className="text-lg font-bold text-white">Activo</p>
               </div>
 
-              <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+              <div className="rounded-2xl bg-zinc-900/70 border border-white/10 p-4">
                 <p className="text-xs text-white/50 uppercase tracking-wide">
                   Formato
                 </p>
                 <p className="text-lg font-bold text-white">1v1</p>
               </div>
 
-              <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+              <div className="rounded-2xl bg-zinc-900/70 border border-white/10 p-4">
                 <p className="text-xs text-white/50 uppercase tracking-wide">
                   Modo
                 </p>
                 <p className="text-lg font-bold text-white">4K</p>
               </div>
 
-              <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+              <div className="rounded-2xl bg-zinc-900/70 border border-white/10 p-4">
                 <p className="text-xs text-white/50 uppercase tracking-wide">
                   Región
                 </p>
@@ -123,7 +121,7 @@ export default async function Home() {
 
           {/* Right side showcase */}
           <div className="relative">
-            <div className="rounded-3xl border border-white/10 bg-black/40 backdrop-blur-md overflow-hidden shadow-2xl">
+            <div className="rounded-3xl border border-purple-300/20 bg-black/55 backdrop-blur-md overflow-hidden shadow-2xl">
               <div className="p-6 border-b border-white/10 flex items-center justify-between">
                 <p className="font-bold text-white tracking-wide">
                   Información del torneo
@@ -193,7 +191,7 @@ export default async function Home() {
                   </div>
 
                   {/* EXTRA MINI STATS */}
-                  <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div className="rounded-2xl bg-white/5 border border-white/10 p-4 text-center">
                       <p className="text-xs text-white/50">Bans</p>
                       <p className="font-bold text-white mt-1">1</p>
