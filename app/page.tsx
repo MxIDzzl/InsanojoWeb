@@ -1,8 +1,24 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { supabase } from "@/lib/supabase";
 
-export default function Home() {
+type NewsItem = {
+  id: number;
+  title: string;
+  content: string;
+  created_at: string;
+};
+
+export default async function Home() {
+  const { data: newsData } = await supabase
+    .from("news")
+    .select("id, title, content, created_at")
+    .order("created_at", { ascending: false })
+    .limit(3);
+
+  const latestNews = (newsData ?? []) as NewsItem[];
+
   return (
     <main className="min-h-screen w-full">
       {/* HERO SECTION */}
@@ -270,52 +286,31 @@ export default function Home() {
           </Button>
         </div>
 
-        <div className="mt-10 grid md:grid-cols-3 gap-6">
-          <Card className="rounded-2xl bg-white/5 border-white/10">
+        {latestNews.length === 0 ? (
+          <Card className="mt-10 rounded-2xl bg-white/5 border-white/10">
             <CardContent className="p-6">
-              <p className="text-xs text-white/50 uppercase tracking-wide">
-                30 Mar 2026
-              </p>
-              <h3 className="mt-2 text-lg font-bold text-white">
-                Publicación del documento oficial
-              </h3>
-              <p className="mt-2 text-sm text-white/70">
-                Ya se encuentra disponible el documento principal con reglas,
-                formato y calendario inicial.
-              </p>
+              <p className="text-sm text-white/60">Aún no hay noticias publicadas.</p>
             </CardContent>
           </Card>
-
-          <Card className="rounded-2xl bg-white/5 border-white/10">
-            <CardContent className="p-6">
-              <p className="text-xs text-white/50 uppercase tracking-wide">
-                Próximamente
-              </p>
-              <h3 className="mt-2 text-lg font-bold text-white">
-                Mappool Qualifiers
-              </h3>
-              <p className="mt-2 text-sm text-white/70">
-                El mappool de qualifiers se publicará con anticipación junto con
-                las lobbies asignadas.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-2xl bg-white/5 border-white/10">
-            <CardContent className="p-6">
-              <p className="text-xs text-white/50 uppercase tracking-wide">
-                Próximamente
-              </p>
-              <h3 className="mt-2 text-lg font-bold text-white">
-                Apertura de registro
-              </h3>
-              <p className="mt-2 text-sm text-white/70">
-                El registro estará disponible cuando el sistema de login con osu!
-                esté habilitado.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        ) : (
+          <div className="mt-10 grid md:grid-cols-3 gap-6">
+            {latestNews.map((item) => (
+              <Card key={item.id} className="rounded-2xl bg-white/5 border-white/10">
+                <CardContent className="p-6">
+                  <p className="text-xs text-white/50 uppercase tracking-wide">
+                    {new Date(item.created_at).toLocaleDateString("es-MX", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </p>
+                  <h3 className="mt-2 text-lg font-bold text-white">{item.title}</h3>
+                  <p className="mt-2 text-sm text-white/70 line-clamp-3">{item.content}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* PREMIOS / STAFF / FAQ */}
@@ -359,7 +354,7 @@ export default function Home() {
                 variant="outline"
                 className="mt-5 rounded-2xl border-white/20 text-white bg-transparent hover:bg-white/10 hover:text-white"
               >
-                <Link href="/staff">Ver staff</Link>
+                <Link href="/staff-list">Ver staff</Link>
               </Button>
             </CardContent>
           </Card>
