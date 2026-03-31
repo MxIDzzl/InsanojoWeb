@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
+import { getMaintenanceConfig } from "@/lib/site-maintenance";
+import MaintenanceCountdown from "@/components/maintenance-countdown";
 
 type NewsItem = {
   id: number;
@@ -10,7 +12,15 @@ type NewsItem = {
   created_at: string;
 };
 
+const phases = [
+  { title: "Registros", detail: "Inscripciones y revisión de elegibilidad" },
+  { title: "Qualifiers", detail: "Siembra inicial para el bracket principal" },
+  { title: "Playoffs", detail: "Eliminación directa con cobertura del staff" },
+  { title: "Finales", detail: "Definición del campeón y premiación" },
+];
+
 export default async function Home() {
+  const maintenance = await getMaintenanceConfig();
   const { data: newsData } = await supabase
     .from("news")
     .select("id, title, content, created_at")
@@ -20,284 +30,121 @@ export default async function Home() {
   const latestNews = (newsData ?? []) as NewsItem[];
 
   return (
-    <main className="min-h-screen w-full">
-      {/* HERO SECTION */}
-      <section className="relative overflow-hidden">
-        {/* Background glow */}
-        <div className="absolute inset-0">
-          <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-purple-600/20 blur-3xl" />
-          <div className="absolute -bottom-40 -right-40 w-[600px] h-[600px] rounded-full bg-fuchsia-500/10 blur-3xl" />
-        </div>
+    <main className="min-h-screen w-full space-y-16 sm:space-y-20">
+      <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-950/70 p-6 sm:p-10">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-violet-500/15 via-transparent to-indigo-500/10" />
 
-        <div className="relative max-w-6xl mx-auto px-6 py-20 grid lg:grid-cols-2 gap-12 items-center">
-          {/* Left side text */}
+        {maintenance.maintenance_enabled && maintenance.maintenance_banner_enabled && (
+          <div className="relative z-20 mb-6 rounded-xl border border-amber-400/30 bg-amber-500/10 p-4">
+            <p className="text-sm font-semibold text-amber-200">Modo mantenimiento activo</p>
+            <p className="mt-1 text-sm text-white/80">
+              {maintenance.maintenance_message ?? "Estamos haciendo mejoras. Volveremos pronto."}
+            </p>
+            {maintenance.maintenance_ends_at && (
+              <MaintenanceCountdown targetDate={maintenance.maintenance_ends_at} />
+            )}
+          </div>
+        )}
+
+        <div className="relative z-10 grid gap-10 lg:grid-cols-[1.2fr_0.8fr]">
           <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-white/60">
-              Torneo competitivo de osu!mania 4K
-            </p>
-
-            <h1 className="mt-4 text-5xl md:text-6xl font-extrabold leading-tight tracking-tight">
-              <span className="text-white">Insanojo</span>{" "}
-              <span className="text-purple-300">Mania</span>{" "}
-              <span className="text-white">4K Cup</span>
+            <p className="text-xs uppercase tracking-[0.18em] text-white/55">osu!mania 4K Tournament</p>
+            <h1 className="mt-4 text-4xl sm:text-5xl font-black tracking-tight text-white">
+              Insanojo Mania Cup
             </h1>
-
-            <p className="mt-6 text-lg text-white/70 max-w-xl">
-              Torneo competitivo diseñado para jugadores serios: mappools
-              balanceados, calendario organizado y bracket profesional.
+            <p className="mt-4 max-w-2xl text-base sm:text-lg text-white/70">
+              Plataforma oficial del torneo: registro, noticias, calendario, mappools y bracket en un solo lugar para jugadores y staff.
             </p>
 
-            {/* Buttons */}
-            <div className="mt-10 flex flex-wrap gap-4">
-              <Button
-                asChild
-                className="rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-semibold px-7 py-6 shadow-lg shadow-purple-500/25"
-              >
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Button asChild className="rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-5">
                 <Link href="/login">Iniciar sesión con osu!</Link>
               </Button>
-
-              <Button
-                asChild
-                variant="outline"
-                className="rounded-2xl border-white/20 text-white bg-transparent hover:bg-white/10 hover:text-white px-7 py-6"
-              >
+              <Button asChild variant="outline" className="rounded-xl border-white/20 bg-transparent text-white hover:bg-white/10">
+                <Link href="/register">Registrarse</Link>
+              </Button>
+              <Button asChild variant="outline" className="rounded-xl border-white/20 bg-transparent text-white hover:bg-white/10">
                 <Link href="/bracket">Ver Bracket</Link>
               </Button>
-
-              <Button
-                asChild
-                variant="outline"
-                className="rounded-2xl border-white/20 text-white bg-transparent hover:bg-white/10 hover:text-white px-7 py-6"
-              >
-                <Link href="/rules">Reglas</Link>
-              </Button>
             </div>
 
-            {/* Info bar */}
-            <div className="mt-12 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-xl">
-              <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
-                <p className="text-xs text-white/50 uppercase tracking-wide">
-                  Estado
-                </p>
-                <p className="text-lg font-bold text-white">Activo</p>
+            <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs uppercase text-white/50">Formato</p>
+                <p className="mt-1 text-sm font-semibold text-white">1v1</p>
               </div>
-
-              <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
-                <p className="text-xs text-white/50 uppercase tracking-wide">
-                  Formato
-                </p>
-                <p className="text-lg font-bold text-white">1v1</p>
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs uppercase text-white/50">Modo</p>
+                <p className="mt-1 text-sm font-semibold text-white">osu!mania 4K</p>
               </div>
-
-              <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
-                <p className="text-xs text-white/50 uppercase tracking-wide">
-                  Modo
-                </p>
-                <p className="text-lg font-bold text-white">4K</p>
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs uppercase text-white/50">Región</p>
+                <p className="mt-1 text-sm font-semibold text-white">LatAm</p>
               </div>
-
-              <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
-                <p className="text-xs text-white/50 uppercase tracking-wide">
-                  Región
-                </p>
-                <p className="text-lg font-bold text-white">LatAm</p>
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs uppercase text-white/50">Estado</p>
+                <p className="mt-1 text-sm font-semibold text-emerald-300">Activo</p>
               </div>
             </div>
           </div>
 
-          {/* Right side showcase */}
-          <div className="relative">
-            <div className="rounded-3xl border border-white/10 bg-black/40 backdrop-blur-md overflow-hidden shadow-2xl">
-              <div className="p-6 border-b border-white/10 flex items-center justify-between">
-                <p className="font-bold text-white tracking-wide">
-                  Información del torneo
-                </p>
-
-                <div className="flex gap-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500/80" />
-                  <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
-                  <div className="w-3 h-3 rounded-full bg-green-500/80" />
+          <div className="imc-panel p-5 sm:p-6">
+            <h2 className="text-lg font-bold text-white">Fases del torneo</h2>
+            <div className="mt-4 space-y-3">
+              {phases.map((phase, index) => (
+                <div key={phase.title} className="rounded-xl border border-white/10 bg-white/5 p-4">
+                  <p className="text-xs uppercase tracking-wide text-violet-300/90">Fase {index + 1}</p>
+                  <p className="mt-1 font-semibold text-white">{phase.title}</p>
+                  <p className="mt-1 text-sm text-white/65">{phase.detail}</p>
                 </div>
-              </div>
-
-              <div className="p-6">
-                <div className="grid gap-4">
-                  <div className="rounded-2xl bg-white/5 border border-white/10 p-5">
-                    <p className="text-sm text-white/60">Etapa actual</p>
-                    <p className="text-2xl font-bold text-purple-300 mt-1">
-                      Qualifiers
-                    </p>
-                    <p className="text-sm text-white/50 mt-2">
-                      Las lobbies y horarios se publicarán en el calendario.
-                    </p>
-                  </div>
-
-                  <div className="rounded-2xl bg-white/5 border border-white/10 p-5">
-                    <p className="text-sm text-white/60">Próximos matches</p>
-                    <p className="text-lg font-semibold text-white mt-1">
-                      Round of 16
-                    </p>
-                    <p className="text-sm text-white/50 mt-2">
-                      Revisa el bracket para ver tu rival y el horario.
-                    </p>
-                  </div>
-
-                  {/* LINKS */}
-                  <div className="rounded-2xl bg-gradient-to-r from-purple-600/30 to-fuchsia-600/10 border border-purple-400/20 p-5">
-                    <p className="text-sm text-white/60">Enlaces principales</p>
-
-                    <div className="mt-3 flex flex-wrap gap-3">
-                      <a
-                        href="https://osu.ppy.sh/community/forums/topics/2191185?n=1"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 transition text-sm font-semibold text-white"
-                      >
-                        Foro osu!
-                      </a>
-
-                      <a
-                        href="https://docs.google.com/document/d/1Q3kYDQZYD2x0lrlxNk_g9NnuYrf2WDcaGpB-8AggCt4"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 transition text-sm font-semibold text-white"
-                      >
-                        Docs
-                      </a>
-
-                      <a
-                        href="https://www.twitch.tv/vexxnx"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 transition text-sm font-semibold text-white"
-                      >
-                        Livestream
-                      </a>
-                    </div>
-                  </div>
-
-                  {/* EXTRA MINI STATS */}
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="rounded-2xl bg-white/5 border border-white/10 p-4 text-center">
-                      <p className="text-xs text-white/50">Bans</p>
-                      <p className="font-bold text-white mt-1">1</p>
-                    </div>
-
-                    <div className="rounded-2xl bg-white/5 border border-white/10 p-4 text-center">
-                      <p className="text-xs text-white/50">Best of</p>
-                      <p className="font-bold text-white mt-1">7</p>
-                    </div>
-
-                    <div className="rounded-2xl bg-white/5 border border-white/10 p-4 text-center">
-                      <p className="text-xs text-white/50">Mods</p>
-                      <p className="font-bold text-white mt-1">Freemod</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              ))}
             </div>
-
-            {/* subtle border glow */}
-            <div className="absolute inset-0 rounded-3xl border border-purple-500/10 pointer-events-none" />
           </div>
         </div>
       </section>
 
-      {/* SKILLSETS */}
-      <section className="max-w-6xl mx-auto px-6 pb-14">
-        <div className="flex items-end justify-between gap-6 flex-wrap">
-          <div>
-            <h2 className="text-3xl font-bold text-white tracking-tight">
-              Categorías del Mappool
-            </h2>
-            <p className="mt-2 text-white/60 max-w-xl">
-              Mappool diseñado con categorías inspiradas en elementos competitivos:
-              Speed, Rice, Hybrid, LN, Tech y TB.
-            </p>
-          </div>
-
-          <Button
-            asChild
-            variant="outline"
-            className="rounded-2xl border-white/20 text-white bg-transparent hover:bg-white/10 hover:text-white"
-          >
-            <Link href="/mappools">Ver Mappools</Link>
-          </Button>
-        </div>
-
-        <div className="mt-8 grid grid-cols-2 md:grid-cols-6 gap-4">
-          <Card className="bg-red-500/20 border-red-500/30 rounded-2xl">
-            <CardContent className="p-4 text-center font-bold text-red-300">
-              Speed
-            </CardContent>
-          </Card>
-
-          <Card className="bg-orange-500/20 border-orange-500/30 rounded-2xl">
-            <CardContent className="p-4 text-center font-bold text-orange-300">
-              Rice
-            </CardContent>
-          </Card>
-
-          <Card className="bg-green-500/20 border-green-500/30 rounded-2xl">
-            <CardContent className="p-4 text-center font-bold text-green-300">
-              Hybrid
-            </CardContent>
-          </Card>
-
-          <Card className="bg-blue-500/20 border-blue-500/30 rounded-2xl">
-            <CardContent className="p-4 text-center font-bold text-blue-300">
-              LN
-            </CardContent>
-          </Card>
-
-          <Card className="bg-purple-500/20 border-purple-500/30 rounded-2xl">
-            <CardContent className="p-4 text-center font-bold text-purple-300">
-              Tech
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/10 border-white/20 rounded-2xl">
-            <CardContent className="p-4 text-center font-bold text-white">
-              TB
-            </CardContent>
-          </Card>
-        </div>
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Link href="/rules" className="imc-panel p-5 hover:border-violet-300/30 transition">
+          <p className="text-sm font-semibold text-white">Reglamento</p>
+          <p className="mt-1 text-sm text-white/65">Reglas oficiales y criterios de match.</p>
+        </Link>
+        <Link href="/mappools" className="imc-panel p-5 hover:border-violet-300/30 transition">
+          <p className="text-sm font-semibold text-white">Mappools</p>
+          <p className="mt-1 text-sm text-white/65">Mapas por etapa y mod pool organizado.</p>
+        </Link>
+        <Link href="/schedule" className="imc-panel p-5 hover:border-violet-300/30 transition">
+          <p className="text-sm font-semibold text-white">Calendario</p>
+          <p className="mt-1 text-sm text-white/65">Fechas de cada ronda y hitos del torneo.</p>
+        </Link>
+        <Link href="/staff-list" className="imc-panel p-5 hover:border-violet-300/30 transition">
+          <p className="text-sm font-semibold text-white">Equipo Staff</p>
+          <p className="mt-1 text-sm text-white/65">Hosts, referees y colaboradores oficiales.</p>
+        </Link>
       </section>
 
-      {/* NOTICIAS */}
-      <section className="max-w-6xl mx-auto px-6 pb-16">
-        <div className="flex items-end justify-between flex-wrap gap-6">
+      <section>
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-bold text-white tracking-tight">
-              Noticias
-            </h2>
-            <p className="mt-2 text-white/60 max-w-2xl">
-              Actualizaciones importantes del torneo, cambios en reglas, anuncios
-              y publicación de mappools.
-            </p>
+            <h2 className="imc-section-title">Noticias recientes</h2>
+            <p className="mt-2 text-sm text-white/65">Comunicados y actualizaciones oficiales del torneo.</p>
           </div>
-
-          <Button
-            asChild
-            variant="outline"
-            className="rounded-2xl border-white/20 text-white bg-transparent hover:bg-white/10 hover:text-white"
-          >
+          <Button asChild variant="outline" className="rounded-xl border-white/20 bg-transparent text-white hover:bg-white/10">
             <Link href="/news">Ver todas</Link>
           </Button>
         </div>
 
         {latestNews.length === 0 ? (
-          <Card className="mt-10 rounded-2xl bg-white/5 border-white/10">
+          <Card className="rounded-2xl border-white/10 bg-white/5">
             <CardContent className="p-6">
               <p className="text-sm text-white/60">Aún no hay noticias publicadas.</p>
             </CardContent>
           </Card>
         ) : (
-          <div className="mt-10 grid md:grid-cols-3 gap-6">
+          <div className="grid gap-4 md:grid-cols-3">
             {latestNews.map((item) => (
-              <Card key={item.id} className="rounded-2xl bg-white/5 border-white/10">
-                <CardContent className="p-6">
-                  <p className="text-xs text-white/50 uppercase tracking-wide">
+              <Card key={item.id} className="rounded-2xl border-white/10 bg-white/5">
+                <CardContent className="p-5">
+                  <p className="text-xs uppercase tracking-wide text-white/45">
                     {new Date(item.created_at).toLocaleDateString("es-MX", {
                       day: "2-digit",
                       month: "short",
@@ -305,77 +152,12 @@ export default async function Home() {
                     })}
                   </p>
                   <h3 className="mt-2 text-lg font-bold text-white">{item.title}</h3>
-                  <p className="mt-2 text-sm text-white/70 line-clamp-3">{item.content}</p>
+                  <p className="mt-2 text-sm text-white/70 line-clamp-4">{item.content}</p>
                 </CardContent>
               </Card>
             ))}
           </div>
         )}
-      </section>
-
-      {/* PREMIOS / STAFF / FAQ */}
-      <section className="max-w-6xl mx-auto px-6 pb-24">
-        <h2 className="text-3xl font-bold text-white tracking-tight">
-          Información general
-        </h2>
-
-        <p className="mt-2 text-white/60 max-w-2xl">
-          Apartados principales para mantener todo el torneo organizado y fácil
-          de consultar.
-        </p>
-
-        <div className="mt-10 grid md:grid-cols-3 gap-6">
-          <Card className="rounded-2xl bg-white/5 border-white/10">
-            <CardContent className="p-6">
-              <h3 className="text-xl font-bold text-purple-300">Premios</h3>
-              <p className="mt-2 text-sm text-white/70">
-                Consulta la distribución de premios y recompensas del torneo.
-              </p>
-
-              <Button
-                asChild
-                variant="outline"
-                className="mt-5 rounded-2xl border-white/20 text-white bg-transparent hover:bg-white/10 hover:text-white"
-              >
-                <Link href="/prizes">Ver premios</Link>
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-2xl bg-white/5 border-white/10">
-            <CardContent className="p-6">
-              <h3 className="text-xl font-bold text-purple-300">Staff</h3>
-              <p className="mt-2 text-sm text-white/70">
-                Lista oficial de organizadores, referees, mappoolers y streamers.
-              </p>
-
-              <Button
-                asChild
-                variant="outline"
-                className="mt-5 rounded-2xl border-white/20 text-white bg-transparent hover:bg-white/10 hover:text-white"
-              >
-                <Link href="/staff-list">Ver staff</Link>
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-2xl bg-white/5 border-white/10">
-            <CardContent className="p-6">
-              <h3 className="text-xl font-bold text-purple-300">FAQ</h3>
-              <p className="mt-2 text-sm text-white/70">
-                Preguntas frecuentes sobre registro, reglas, mappools y formato.
-              </p>
-
-              <Button
-                asChild
-                variant="outline"
-                className="mt-5 rounded-2xl border-white/20 text-white bg-transparent hover:bg-white/10 hover:text-white"
-              >
-                <Link href="/faq">Ver FAQ</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
       </section>
     </main>
   );
