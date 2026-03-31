@@ -49,11 +49,11 @@ export default async function Home() {
         <div className="relative z-10 grid gap-10 lg:grid-cols-[1.2fr_0.8fr]">
           <div>
             <p className="text-xs uppercase tracking-[0.22em] text-violet-100/70">osu!mania 4K Tournament</p>
-            <h1 className="mt-4 text-4xl sm:text-5xl font-black tracking-tight text-white">
+            <h1 className="mt-4 text-4xl sm:text-5xl font-black tracking-tight text-white uppercase">
               Insanojo Mania Cup
             </h1>
             <p className="mt-4 max-w-2xl text-base sm:text-lg text-white/75">
-              Plataforma oficial del torneo: registro, noticias, calendario, mappools y bracket en un solo lugar para jugadores y staff.
+              Plataforma oficial del torneo: registro, fixtures, mappools y bracket en un solo lugar para jugadores y staff.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
@@ -86,14 +86,18 @@ export default async function Home() {
                 <p className="mt-1 text-sm font-semibold text-emerald-300">Activo</p>
               </div>
             </div>
+            <div className="mt-5 inline-flex items-center gap-2 rounded-md border border-fuchsia-300/25 bg-fuchsia-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-fuchsia-200">
+              <span className="inline-block h-2 w-2 rounded-full bg-fuchsia-300" />
+              Broadcast & Match Coverage Activo
+            </div>
           </div>
 
           <div className="imc-panel p-5 sm:p-6">
-            <h2 className="text-lg font-bold text-white">Fases del torneo</h2>
+            <h2 className="text-lg font-bold uppercase tracking-wide text-white">Match Roadmap</h2>
             <div className="mt-4 space-y-3">
               {phases.map((phase, index) => (
                 <div key={phase.title} className="rounded-xl border border-violet-300/20 bg-violet-500/10 p-4">
-                  <p className="text-xs uppercase tracking-wide text-rose-200/90">Fase {index + 1}</p>
+                  <p className="text-xs uppercase tracking-wide text-rose-200/90">Stage {index + 1}</p>
                   <p className="mt-1 font-semibold text-white">{phase.title}</p>
                   <p className="mt-1 text-sm text-white/65">{phase.detail}</p>
                 </div>

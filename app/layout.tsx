@@ -81,10 +81,10 @@ export default async function RootLayout({
           )}
         </main>
 
-        <footer className="w-full border-t border-white/10 mt-16 bg-black/30">
+        <footer className="w-full border-t border-violet-300/15 mt-16 bg-[#0b0915]/70">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 text-sm text-white/50 flex flex-col sm:flex-row gap-2 justify-between">
             <p>© {new Date().getFullYear()} Insanojo Mania 4K Cup</p>
-            <p className="text-purple-300/70">Website by Vexx</p>
+            <p className="text-violet-200/70 uppercase tracking-wide text-xs">Website by Vexx</p>
           </div>
         </footer>
       </body>

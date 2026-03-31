@@ -20,6 +20,18 @@ type User = {
   role: string | null;
 };
 
+const NAV_LINKS = [
+  { href: "/rules", label: "Reglas" },
+  { href: "/participants", label: "Jugadores" },
+  { href: "/mappools", label: "Mappool" },
+  { href: "/bracket", label: "Brackets" },
+  { href: "/schedule", label: "Partidas" },
+  { href: "/news", label: "Noticias" },
+  { href: "/prizes", label: "Premios" },
+  { href: "/staff-list", label: "Staff" },
+  { href: "/faq", label: "FAQ" },
+];
+
 export default function Navbar() {
   const [user, setUser] = useState<User | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -53,65 +65,78 @@ export default function Navbar() {
   ];
 
   return (
-    <header className="w-full border-b border-violet-300/20 bg-[#120f24]/80 backdrop-blur-xl sticky top-0 z-50">
-      <nav className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+    <header className="sticky top-0 z-50 border-b border-violet-200/20 bg-[#0f0b20]/90 backdrop-blur-xl">
+      <div className="border-b border-white/10 bg-black/25">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-2 text-[11px] uppercase tracking-[0.18em] text-white/65 sm:px-6">
+          <p>Insanojo Mania Cup • Competitive Series</p>
+          <p className="text-violet-200/80">Season 2026</p>
+        </div>
+      </div>
+
+      <nav className="mx-auto max-w-6xl px-4 py-3 sm:px-6">
         <div className="flex items-center justify-between gap-3">
-          <Link href="/" className="inline-flex items-center gap-2 text-base sm:text-xl font-black tracking-wide uppercase">
-            <span className="h-2.5 w-2.5 rounded-full bg-rose-300/90" />
-            <span className="imc-title-gradient">Insanojo Mania Cup</span>
+          <Link href="/" className="inline-flex items-center gap-2 text-base font-black uppercase tracking-wide sm:text-xl">
+            <span className="h-2.5 w-2.5 rounded-full bg-rose-300" />
+            <span className="imc-title-gradient">Insanojo Cup</span>
           </Link>
 
           <button
             type="button"
             onClick={() => setMobileOpen((prev) => !prev)}
-            className="md:hidden rounded-lg border border-white/15 px-3 py-2 text-sm text-white/90"
+            className="rounded-lg border border-white/15 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white/90 md:hidden"
             aria-label="Abrir menú"
             aria-expanded={mobileOpen}
           >
             {mobileOpen ? "Cerrar" : "Menú"}
           </button>
 
-          <div className="hidden md:flex gap-1 text-xs font-semibold text-white/70 items-center uppercase tracking-wide">
-            {links.map((link) => (
+          <div className="hidden items-center gap-1 md:flex">
+            {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="rounded-lg px-3 py-2 hover:bg-violet-400/15 hover:text-violet-100 transition"
+                className="rounded-md border border-transparent px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-white/70 transition hover:border-violet-300/40 hover:bg-violet-500/15 hover:text-white"
               >
                 {link.label}
               </Link>
             ))}
 
             {user && (
-              <Link href="/register" className="rounded-lg px-3 py-2 hover:bg-violet-400/15 hover:text-violet-100 transition">
+              <Link
+                href="/register"
+                className="rounded-md border border-transparent px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-white/70 transition hover:border-violet-300/40 hover:bg-violet-500/15 hover:text-white"
+              >
                 Registro
               </Link>
             )}
 
             {isStaff && (
-              <Link href="/staff" className="hover:text-yellow-300 text-yellow-400/80 transition">
-                Staff
+              <Link
+                href="/staff"
+                className="rounded-md border border-yellow-300/30 bg-yellow-400/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-yellow-200 transition hover:bg-yellow-300/20"
+              >
+                Panel Staff
               </Link>
             )}
 
             {!user ? (
               <Link
                 href="/login"
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-semibold transition shadow-md shadow-violet-900/50"
+                className="ml-1 rounded-md bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-2 text-[11px] font-bold uppercase tracking-wide text-white shadow-lg shadow-violet-900/40"
               >
                 Login
               </Link>
             ) : (
               <DropdownMenu>
-                <DropdownMenuTrigger className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-white/10 transition">
-                  <Avatar className="w-8 h-8">
+                <DropdownMenuTrigger className="ml-2 flex items-center gap-2 rounded-lg border border-white/10 px-2 py-1.5 hover:bg-white/10 transition">
+                  <Avatar className="h-7 w-7">
                     <AvatarImage src={user.avatar_url} />
                     <AvatarFallback>U</AvatarFallback>
                   </Avatar>
-                  <span className="text-white font-semibold text-sm">{user.username}</span>
+                  <span className="text-xs font-semibold text-white">{user.username}</span>
                 </DropdownMenuTrigger>
 
-                <DropdownMenuContent className="w-56 bg-black/90 border border-white/10 text-white">
+                <DropdownMenuContent className="w-56 border border-white/10 bg-black/90 text-white">
                   <DropdownMenuLabel>Cuenta</DropdownMenuLabel>
                   <DropdownMenuItem asChild>
                     <Link href="/me">Ver perfil</Link>
@@ -134,14 +159,14 @@ export default function Navbar() {
         </div>
 
         {mobileOpen && (
-          <div className="mt-3 md:hidden imc-panel p-3">
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              {links.map((link) => (
+          <div className="mt-3 rounded-xl border border-violet-300/20 bg-[#15102b]/95 p-3 md:hidden">
+            <div className="grid grid-cols-2 gap-2">
+              {NAV_LINKS.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
                   onClick={() => setMobileOpen(false)}
-                  className="rounded-lg border border-white/10 px-3 py-2 text-white/85 hover:bg-violet-400/15"
+                  className="rounded-md border border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white/85 hover:bg-violet-500/15"
                 >
                   {link.label}
                 </Link>
@@ -150,7 +175,7 @@ export default function Navbar() {
                 <Link
                   href="/register"
                   onClick={() => setMobileOpen(false)}
-                  className="rounded-lg border border-white/10 px-3 py-2 text-white/85 hover:bg-white/10"
+                  className="rounded-md border border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white/85 hover:bg-violet-500/15"
                 >
                   Registro
                 </Link>
@@ -159,9 +184,9 @@ export default function Navbar() {
                 <Link
                   href="/staff"
                   onClick={() => setMobileOpen(false)}
-                  className="rounded-lg border border-yellow-300/30 px-3 py-2 text-yellow-300 hover:bg-yellow-300/10"
+                  className="rounded-md border border-yellow-300/30 bg-yellow-400/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-yellow-200"
                 >
-                  Staff
+                  Panel Staff
                 </Link>
               )}
             </div>
@@ -170,20 +195,20 @@ export default function Navbar() {
               <Link
                 href="/login"
                 onClick={() => setMobileOpen(false)}
-                className="mt-3 block rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-2 text-center text-sm font-semibold text-white"
+                className="mt-3 block rounded-md bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-2 text-center text-xs font-bold uppercase tracking-wide text-white"
               >
                 Login
               </Link>
             ) : (
-              <div className="mt-3 flex items-center justify-between rounded-xl border border-white/10 px-3 py-2">
+              <div className="mt-3 flex items-center justify-between rounded-md border border-white/10 px-3 py-2">
                 <div className="flex items-center gap-2">
-                  <Avatar className="w-7 h-7">
+                  <Avatar className="h-7 w-7">
                     <AvatarImage src={user.avatar_url} />
                     <AvatarFallback>U</AvatarFallback>
                   </Avatar>
                   <span className="text-sm text-white">{user.username}</span>
                 </div>
-                <button type="button" onClick={logout} className="text-sm text-red-300">
+                <button type="button" onClick={logout} className="text-xs font-semibold uppercase tracking-wide text-red-300">
                   Salir
                 </button>
               </div>
