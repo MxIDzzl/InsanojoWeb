@@ -1,9 +1,9 @@
 import { Card, CardContent } from "@/components/ui/card";
 
 const PRIZES = [
-  { place: "1er lugar", amount: "$150 USD", extra: "Badge de campeón + reconocimiento oficial" },
-  { place: "2do lugar", amount: "$75 USD", extra: "Reconocimiento oficial en foro y stream" },
-  { place: "3er lugar", amount: "$40 USD", extra: "Mención oficial en resultados finales" },
+  { place: "1er lugar", amount: "4 meses de supporter + 5 meses de vip en RoBeats" },
+  { place: "2do lugar", amount: "2 meses de supporter + 2 meses de vip en RoBeats" },
+  { place: "3er lugar", amount: "1 mes de supporter + 1 mes de vip en RoBeats" },
 ];
 
 export default function PrizesPage() {
