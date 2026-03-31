@@ -53,11 +53,12 @@ export default function Navbar() {
   ];
 
   return (
-    <header className="w-full border-b border-fuchsia-400/20 bg-black/70 backdrop-blur-md sticky top-0 z-50">
+    <header className="w-full border-b border-fuchsia-400/20 bg-black/65 backdrop-blur-xl sticky top-0 z-50">
       <nav className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
         <div className="flex items-center justify-between gap-3">
-          <Link href="/" className="text-base sm:text-xl font-black tracking-wide imc-title-gradient">
-            Insanojo Mania Cup
+          <Link href="/" className="inline-flex items-center gap-2 text-base sm:text-xl font-black tracking-wide">
+            <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-br from-fuchsia-400 to-blue-400 shadow-[0_0_14px_rgba(96,165,250,0.9)]" />
+            <span className="imc-title-gradient">Insanojo Mania Cup</span>
           </Link>
 
           <button
@@ -70,15 +71,19 @@ export default function Navbar() {
             {mobileOpen ? "Cerrar" : "Menú"}
           </button>
 
-          <div className="hidden md:flex gap-6 text-sm font-medium text-white/70 items-center">
+          <div className="hidden md:flex gap-2 text-sm font-medium text-white/70 items-center">
             {links.map((link) => (
-              <Link key={link.href} href={link.href} className="hover:text-purple-300 transition">
+              <Link
+                key={link.href}
+                href={link.href}
+                className="rounded-lg px-3 py-2 hover:bg-white/10 hover:text-purple-200 transition"
+              >
                 {link.label}
               </Link>
             ))}
 
             {user && (
-              <Link href="/register" className="hover:text-purple-300 transition">
+              <Link href="/register" className="rounded-lg px-3 py-2 hover:bg-white/10 hover:text-purple-200 transition">
                 Registro
               </Link>
             )}
@@ -92,7 +97,7 @@ export default function Navbar() {
             {!user ? (
               <Link
                 href="/login"
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 via-fuchsia-600 to-red-500 text-white font-semibold transition shadow-md shadow-purple-500/30"
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 via-fuchsia-600 to-red-500 text-white font-semibold transition shadow-md shadow-purple-500/30 hover:brightness-110"
               >
                 Login
               </Link>
@@ -129,7 +134,7 @@ export default function Navbar() {
         </div>
 
         {mobileOpen && (
-          <div className="mt-3 md:hidden imc-surface rounded-xl p-3">
+          <div className="mt-3 md:hidden imc-panel p-3">
             <div className="grid grid-cols-2 gap-2 text-sm">
               {links.map((link) => (
                 <Link

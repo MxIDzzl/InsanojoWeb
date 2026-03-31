@@ -27,7 +27,7 @@ export default async function Home() {
       {/* HERO SECTION */}
       <section className="relative overflow-hidden">
         {maintenance.maintenance_enabled && maintenance.maintenance_banner_enabled && (
-          <div className="relative z-20 max-w-6xl mx-auto px-6 pt-6">
+          <div className="relative z-20 max-w-6xl mx-auto px-4 sm:px-6 pt-6">
             <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 p-4">
               <p className="text-sm font-semibold text-amber-200">Modo mantenimiento activo</p>
               <p className="mt-1 text-sm text-white/80">
@@ -62,7 +62,7 @@ export default async function Home() {
             </p>
 
             {/* Buttons */}
-            <div className="mt-10 flex flex-wrap gap-4">
+            <div className="mt-10 flex flex-wrap gap-3">
               <Button
                 asChild
                 className="rounded-2xl bg-gradient-to-r from-purple-600 via-fuchsia-600 to-red-500 text-white font-semibold px-6 sm:px-7 py-5 sm:py-6 shadow-lg shadow-purple-500/25"
@@ -85,6 +85,14 @@ export default async function Home() {
               >
                 <Link href="/rules">Reglas</Link>
               </Button>
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-wide">
+              <span className="rounded-full border border-red-400/35 bg-red-500/15 px-3 py-1 text-red-200">Speed</span>
+              <span className="rounded-full border border-orange-400/35 bg-orange-500/15 px-3 py-1 text-orange-200">Rice</span>
+              <span className="rounded-full border border-green-400/35 bg-green-500/15 px-3 py-1 text-green-200">Hybrid</span>
+              <span className="rounded-full border border-blue-400/35 bg-blue-500/15 px-3 py-1 text-blue-200">LN</span>
+              <span className="rounded-full border border-purple-400/35 bg-purple-500/15 px-3 py-1 text-purple-200">Tech</span>
             </div>
 
             {/* Info bar */}
@@ -121,7 +129,7 @@ export default async function Home() {
 
           {/* Right side showcase */}
           <div className="relative">
-            <div className="rounded-3xl border border-purple-300/20 bg-black/55 backdrop-blur-md overflow-hidden shadow-2xl">
+            <div className="imc-panel overflow-hidden">
               <div className="p-6 border-b border-white/10 flex items-center justify-between">
                 <p className="font-bold text-white tracking-wide">
                   Información del torneo
@@ -218,10 +226,10 @@ export default async function Home() {
       </section>
 
       {/* SKILLSETS */}
-      <section className="max-w-6xl mx-auto px-6 pb-14">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-14">
         <div className="flex items-end justify-between gap-6 flex-wrap">
           <div>
-            <h2 className="text-3xl font-bold text-white tracking-tight">
+            <h2 className="imc-section-title">
               Categorías del Mappool
             </h2>
             <p className="mt-2 text-white/60 max-w-xl">
@@ -279,10 +287,10 @@ export default async function Home() {
       </section>
 
       {/* NOTICIAS */}
-      <section className="max-w-6xl mx-auto px-6 pb-16">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-16">
         <div className="flex items-end justify-between flex-wrap gap-6">
           <div>
-            <h2 className="text-3xl font-bold text-white tracking-tight">
+            <h2 className="imc-section-title">
               Noticias
             </h2>
             <p className="mt-2 text-white/60 max-w-2xl">
@@ -328,8 +336,8 @@ export default async function Home() {
       </section>
 
       {/* PREMIOS / STAFF / FAQ */}
-      <section className="max-w-6xl mx-auto px-6 pb-24">
-        <h2 className="text-3xl font-bold text-white tracking-tight">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-24">
+        <h2 className="imc-section-title">
           Información general
         </h2>
 
