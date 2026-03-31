@@ -102,15 +102,28 @@ export default function StaffPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
 
   // Estados de noticias
-  const [newsList, setNewsList] = useState<{ id: number; title: string; created_at: string }[]>([]);
+  const [newsList, setNewsList] = useState<{
+    id: number;
+    title: string;
+    created_at: string;
+    publish_at: string | null;
+    is_published: boolean | null;
+    is_hidden: boolean | null;
+  }[]>([]);
   const [newsTitle, setNewsTitle] = useState("");
   const [newsContent, setNewsContent] = useState("");
   const [newsImage, setNewsImage] = useState("");
+  const [newsPublishAt, setNewsPublishAt] = useState("");
+  const [newsIsDraft, setNewsIsDraft] = useState(false);
+  const [newsIsHidden, setNewsIsHidden] = useState(false);
   const [publishingNews, setPublishingNews] = useState(false);
   const [newsError, setNewsError] = useState<string | null>(null);
   const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);
   const [maintenanceEndsAt, setMaintenanceEndsAt] = useState("");
   const [maintenanceMessage, setMaintenanceMessage] = useState("");
+  const [maintenanceWhitelist, setMaintenanceWhitelist] = useState("");
+  const [maintenanceTemplate, setMaintenanceTemplate] = useState("default");
+  const [maintenanceBannerEnabled, setMaintenanceBannerEnabled] = useState(true);
   const [savingMaintenance, setSavingMaintenance] = useState(false);
   const [maintenanceError, setMaintenanceError] = useState<string | null>(null);
   const [mappools, setMappools] = useState<MappoolCollection[]>([]);
@@ -186,7 +199,7 @@ export default function StaffPage() {
       setParticipants(partData.participants ?? []);
 
       // Noticias
-      const newsRes = await fetch("/api/news");
+      const newsRes = await fetch("/api/news?include_unpublished=1");
       const newsData = await newsRes.json();
       setNewsList(newsData.news ?? []);
 
@@ -196,6 +209,9 @@ export default function StaffPage() {
       if (maintenanceRes.ok) {
         setMaintenanceEnabled(Boolean(maintenanceData.maintenance?.maintenance_enabled));
         setMaintenanceMessage(maintenanceData.maintenance?.maintenance_message ?? "");
+        setMaintenanceWhitelist(maintenanceData.maintenance?.maintenance_whitelist_text ?? "");
+        setMaintenanceTemplate(maintenanceData.maintenance?.maintenance_template ?? "default");
+        setMaintenanceBannerEnabled(Boolean(maintenanceData.maintenance?.maintenance_banner_enabled ?? true));
         if (maintenanceData.maintenance?.maintenance_ends_at) {
           const date = new Date(maintenanceData.maintenance.maintenance_ends_at);
           const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
@@ -271,6 +287,9 @@ export default function StaffPage() {
         title: newsTitle,
         content: newsContent,
         image_url: newsImage || null,
+        publish_at: newsPublishAt || null,
+        is_published: !newsIsDraft,
+        is_hidden: newsIsHidden,
       }),
     });
 
@@ -278,7 +297,10 @@ export default function StaffPage() {
       setNewsTitle("");
       setNewsContent("");
       setNewsImage("");
-      const newsRes = await fetch("/api/news");
+      setNewsPublishAt("");
+      setNewsIsDraft(false);
+      setNewsIsHidden(false);
+      const newsRes = await fetch("/api/news?include_unpublished=1");
       const newsData = await newsRes.json();
       setNewsList(newsData.news ?? []);
     } else {
@@ -293,6 +315,18 @@ export default function StaffPage() {
     if (res.ok) setNewsList((prev) => prev.filter((n) => n.id !== id));
   }
 
+  async function handleToggleNews(id: number, patch: { is_published?: boolean; is_hidden?: boolean }) {
+    const res = await fetch(`/api/news/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    });
+    if (!res.ok) return;
+    const newsRes = await fetch("/api/news?include_unpublished=1");
+    const newsData = await newsRes.json();
+    setNewsList(newsData.news ?? []);
+  }
+
   async function handleSaveMaintenance() {
     setSavingMaintenance(true);
     setMaintenanceError(null);
@@ -303,6 +337,9 @@ export default function StaffPage() {
         enabled: maintenanceEnabled,
         ends_at: maintenanceEndsAt || null,
         message: maintenanceMessage || null,
+        whitelist_text: maintenanceWhitelist || null,
+        template: maintenanceTemplate,
+        banner_enabled: maintenanceBannerEnabled,
       }),
     });
 
@@ -950,6 +987,41 @@ export default function StaffPage() {
             />
           </div>
 
+          <div>
+            <label className="text-sm text-white/50 mb-1 block">
+              Whitelist temporal (IDs/username/IP separados por coma o salto de línea)
+            </label>
+            <textarea
+              value={maintenanceWhitelist}
+              onChange={(e) => setMaintenanceWhitelist(e.target.value)}
+              rows={2}
+              placeholder="12345, adminUser, 203.0.113.20"
+              className="w-full bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/30 p-3 text-sm resize-y focus:outline-none focus:ring-1 focus:ring-purple-500"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm text-white/50 mb-1 block">Plantilla visual</label>
+            <select
+              value={maintenanceTemplate}
+              onChange={(e) => setMaintenanceTemplate(e.target.value)}
+              className="bg-white/5 border border-white/10 text-white p-2 rounded-lg"
+            >
+              <option value="default">Default</option>
+              <option value="minimal">Minimal</option>
+              <option value="warning">Warning</option>
+            </select>
+          </div>
+
+          <label className="flex items-center gap-3 text-white">
+            <input
+              type="checkbox"
+              checked={maintenanceBannerEnabled}
+              onChange={(e) => setMaintenanceBannerEnabled(e.target.checked)}
+            />
+            Mostrar banner público de mantenimiento en Home
+          </label>
+
           {maintenanceError && <p className="text-red-400 text-sm">{maintenanceError}</p>}
           <Button
             className="rounded-xl bg-amber-600 hover:bg-amber-500 w-fit"
@@ -993,6 +1065,37 @@ export default function StaffPage() {
 
           <div>
             <label className="text-sm text-white/50 mb-1 block">
+              Publicar en (opcional)
+            </label>
+            <input
+              type="datetime-local"
+              value={newsPublishAt}
+              onChange={(e) => setNewsPublishAt(e.target.value)}
+              className="bg-white/5 border-white/10 text-white placeholder:text-white/30 w-full p-2 rounded-lg"
+            />
+          </div>
+
+          <div className="flex flex-wrap gap-4">
+            <label className="flex items-center gap-2 text-sm text-white/80">
+              <input
+                type="checkbox"
+                checked={newsIsDraft}
+                onChange={(e) => setNewsIsDraft(e.target.checked)}
+              />
+              Guardar como borrador (no publicar)
+            </label>
+            <label className="flex items-center gap-2 text-sm text-white/80">
+              <input
+                type="checkbox"
+                checked={newsIsHidden}
+                onChange={(e) => setNewsIsHidden(e.target.checked)}
+              />
+              Oculta para público
+            </label>
+          </div>
+
+          <div>
+            <label className="text-sm text-white/50 mb-1 block">
               Contenido (BBCode)
             </label>
             <textarea
@@ -1030,14 +1133,36 @@ export default function StaffPage() {
                     year: "numeric",
                   })}
                 </p>
+                <p className="text-white/40 text-xs mt-1">
+                  {item.is_published ? "Publicado" : "Borrador"} · {item.is_hidden ? "Oculto" : "Visible"} ·{" "}
+                  {item.publish_at ? `publish_at: ${new Date(item.publish_at).toLocaleString("es-MX")}` : "sin fecha programada"}
+                </p>
               </div>
-              <Button
-                variant="destructive"
-                className="rounded-xl"
-                onClick={() => handleDeleteNews(item.id)}
-              >
-                Eliminar
-              </Button>
+              <div className="flex flex-wrap gap-2 justify-end">
+                <Button
+                  className="rounded-xl"
+                  variant="secondary"
+                  onClick={() =>
+                    handleToggleNews(item.id, { is_published: !(item.is_published ?? false) })
+                  }
+                >
+                  {item.is_published ? "Pasar a borrador" : "Publicar"}
+                </Button>
+                <Button
+                  className="rounded-xl"
+                  variant="outline"
+                  onClick={() => handleToggleNews(item.id, { is_hidden: !(item.is_hidden ?? false) })}
+                >
+                  {item.is_hidden ? "Mostrar" : "Ocultar"}
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="rounded-xl"
+                  onClick={() => handleDeleteNews(item.id)}
+                >
+                  Eliminar
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ))}
