@@ -1,12 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { verifySessionToken } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { supabase } from "@/lib/supabase";
 
 export async function DELETE(
-  _req: Request,
-  { params }: { params: { id: string } }
+  _req: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await context.params;
   const token = (await cookies()).get("session")?.value;
   if (!token) return NextResponse.json({ error: "No autenticado." }, { status: 401 });
 
@@ -24,7 +25,7 @@ export async function DELETE(
   const { error } = await supabase
     .from("news")
     .delete()
-    .eq("id", params.id);
+    .eq("id", id);
 
   if (error) {
     return NextResponse.json({ error: "Error al eliminar noticia." }, { status: 500 });

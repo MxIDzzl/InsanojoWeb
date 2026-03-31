@@ -26,7 +26,7 @@ export async function GET() {
       discord_username,
       status,
       created_at,
-      users (
+      users:users!registrations_osu_id_fkey (
         username,
         avatar_url,
         country_code
