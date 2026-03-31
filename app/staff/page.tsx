@@ -64,6 +64,7 @@ export default function StaffPage() {
   const [savingParticipant, setSavingParticipant] = useState<string | null>(null);
   const [pageLoading, setPageLoading] = useState(true);
   const [unauthorized, setUnauthorized] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Estados de noticias
   const [newsList, setNewsList] = useState<{ id: number; title: string; created_at: string }[]>([]);
@@ -87,6 +88,9 @@ export default function StaffPage() {
       // Solicitudes pendientes
       const regRes = await fetch("/api/staff/registrations");
       const regData = await regRes.json();
+      if (!regRes.ok) {
+        setLoadError(regData.error ?? "No se pudieron cargar las solicitudes pendientes.");
+      }
       setRegistrations(regData.registrations ?? []);
 
       const initialActions: Record<string, Action> = {};
@@ -98,6 +102,9 @@ export default function StaffPage() {
       // Participantes aceptados
       const partRes = await fetch("/api/participants");
       const partData = await partRes.json();
+      if (!partRes.ok) {
+        setLoadError((prev) => prev ?? partData.error ?? "No se pudieron cargar los participantes.");
+      }
       setParticipants(partData.participants ?? []);
 
       // Noticias
@@ -196,6 +203,11 @@ export default function StaffPage() {
       <p className="mt-3 text-white/60">
         Gestiona registros y participantes del torneo.
       </p>
+      {loadError && (
+        <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+          {loadError}
+        </div>
+      )}
 
       {/* ── Solicitudes pendientes ── */}
       <h2 className="mt-10 text-2xl font-bold text-white">Solicitudes pendientes</h2>
