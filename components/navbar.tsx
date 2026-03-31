@@ -53,11 +53,11 @@ export default function Navbar() {
   ];
 
   return (
-    <header className="w-full border-b border-fuchsia-400/20 bg-black/65 backdrop-blur-xl sticky top-0 z-50">
+    <header className="w-full border-b border-white/10 bg-slate-950/75 backdrop-blur-xl sticky top-0 z-50">
       <nav className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
         <div className="flex items-center justify-between gap-3">
           <Link href="/" className="inline-flex items-center gap-2 text-base sm:text-xl font-black tracking-wide">
-            <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-br from-fuchsia-400 to-blue-400 shadow-[0_0_14px_rgba(96,165,250,0.9)]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-violet-300/80" />
             <span className="imc-title-gradient">Insanojo Mania Cup</span>
           </Link>
 
@@ -97,7 +97,7 @@ export default function Navbar() {
             {!user ? (
               <Link
                 href="/login"
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 via-fuchsia-600 to-red-500 text-white font-semibold transition shadow-md shadow-purple-500/30 hover:brightness-110"
+                className="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold transition shadow-md shadow-violet-900/40"
               >
                 Login
               </Link>
@@ -170,7 +170,7 @@ export default function Navbar() {
               <Link
                 href="/login"
                 onClick={() => setMobileOpen(false)}
-                className="mt-3 block rounded-xl bg-gradient-to-r from-purple-600 via-fuchsia-600 to-red-500 px-4 py-2 text-center text-sm font-semibold text-white"
+                className="mt-3 block rounded-xl bg-violet-600 hover:bg-violet-500 px-4 py-2 text-center text-sm font-semibold text-white"
               >
                 Login
               </Link>

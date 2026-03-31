@@ -65,7 +65,7 @@ export default async function Home() {
             <div className="mt-10 flex flex-wrap gap-3">
               <Button
                 asChild
-                className="rounded-2xl bg-gradient-to-r from-purple-600 via-fuchsia-600 to-red-500 text-white font-semibold px-6 sm:px-7 py-5 sm:py-6 shadow-lg shadow-purple-500/25"
+                className="rounded-2xl bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 sm:px-7 py-5 sm:py-6 shadow-lg shadow-violet-900/35"
               >
                 <Link href="/login">Iniciar sesión con osu!</Link>
               </Button>
@@ -87,12 +87,11 @@ export default async function Home() {
               </Button>
             </div>
 
-            <div className="mt-6 flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-wide">
-              <span className="rounded-full border border-red-400/35 bg-red-500/15 px-3 py-1 text-red-200">Speed</span>
-              <span className="rounded-full border border-orange-400/35 bg-orange-500/15 px-3 py-1 text-orange-200">Rice</span>
-              <span className="rounded-full border border-green-400/35 bg-green-500/15 px-3 py-1 text-green-200">Hybrid</span>
-              <span className="rounded-full border border-blue-400/35 bg-blue-500/15 px-3 py-1 text-blue-200">LN</span>
-              <span className="rounded-full border border-purple-400/35 bg-purple-500/15 px-3 py-1 text-purple-200">Tech</span>
+            <div className="mt-6 flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-wide text-white/75">
+              <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1">Ruleset competitivo</span>
+              <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1">Mappool curado</span>
+              <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1">Bracket oficial</span>
+              <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1">Staff activo</span>
             </div>
 
             {/* Info bar */}
@@ -165,7 +164,7 @@ export default async function Home() {
                   </div>
 
                   {/* LINKS */}
-                  <div className="rounded-2xl bg-gradient-to-r from-purple-600/30 to-fuchsia-600/10 border border-purple-400/20 p-5">
+                  <div className="rounded-2xl bg-violet-500/10 border border-violet-300/20 p-5">
                     <p className="text-sm text-white/60">Enlaces principales</p>
 
                     <div className="mt-3 flex flex-wrap gap-3">

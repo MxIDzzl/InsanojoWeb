@@ -60,11 +60,11 @@ export default async function RootLayout({
   return (
     <html lang="es">
       <body className="min-h-screen bg-[#05010a] text-white">
-        <div className="h-1.5 w-full bg-gradient-to-r from-red-500 via-orange-400 via-yellow-300 via-green-400 via-blue-400 to-purple-500" />
+        <div className="h-px w-full bg-white/10" />
         {!maintenanceEnabledForUser && <Navbar />}
 
         <main className="relative max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
-          <div className="pointer-events-none absolute inset-0 -z-10 imc-grid-lines opacity-[0.07]" />
+          <div className="pointer-events-none absolute inset-0 -z-10 imc-grid-lines opacity-[0.04]" />
           {maintenanceEnabledForUser ? (
             <div className={`py-20 ${templateClasses} imc-panel`}>
               <h1 className="text-4xl font-extrabold text-white tracking-tight">Sitio en mantenimiento</h1>
