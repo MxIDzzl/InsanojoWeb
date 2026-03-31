@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { DragEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,7 +49,14 @@ type MappoolCollection = {
   stage: string | null;
   accent_color: string | null;
   drive_url: string | null;
-  items: { id: number; title: string | null; mods: string | null; beatmap_url: string; }[];
+  items: {
+    id: number;
+    title: string | null;
+    artist: string | null;
+    mods: string | null;
+    beatmap_url: string;
+    sort_order: number;
+  }[];
 };
 
 type BracketNode = {
@@ -95,15 +102,28 @@ export default function StaffPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
 
   // Estados de noticias
-  const [newsList, setNewsList] = useState<{ id: number; title: string; created_at: string }[]>([]);
+  const [newsList, setNewsList] = useState<{
+    id: number;
+    title: string;
+    created_at: string;
+    publish_at: string | null;
+    is_published: boolean | null;
+    is_hidden: boolean | null;
+  }[]>([]);
   const [newsTitle, setNewsTitle] = useState("");
   const [newsContent, setNewsContent] = useState("");
   const [newsImage, setNewsImage] = useState("");
+  const [newsPublishAt, setNewsPublishAt] = useState("");
+  const [newsIsDraft, setNewsIsDraft] = useState(false);
+  const [newsIsHidden, setNewsIsHidden] = useState(false);
   const [publishingNews, setPublishingNews] = useState(false);
   const [newsError, setNewsError] = useState<string | null>(null);
   const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);
   const [maintenanceEndsAt, setMaintenanceEndsAt] = useState("");
   const [maintenanceMessage, setMaintenanceMessage] = useState("");
+  const [maintenanceWhitelist, setMaintenanceWhitelist] = useState("");
+  const [maintenanceTemplate, setMaintenanceTemplate] = useState("default");
+  const [maintenanceBannerEnabled, setMaintenanceBannerEnabled] = useState(true);
   const [savingMaintenance, setSavingMaintenance] = useState(false);
   const [maintenanceError, setMaintenanceError] = useState<string | null>(null);
   const [mappools, setMappools] = useState<MappoolCollection[]>([]);
@@ -115,6 +135,16 @@ export default function StaffPage() {
   const [poolBeatmapUrl, setPoolBeatmapUrl] = useState("");
   const [poolMods, setPoolMods] = useState("");
   const [poolItemColor, setPoolItemColor] = useState("#a855f7");
+  const [poolPreview, setPoolPreview] = useState<{
+    title: string;
+    artist: string;
+    version: string;
+    star_rating: number | null;
+    is_mania: boolean | null;
+    is_duplicate: boolean;
+  } | null>(null);
+  const [poolPreviewLoading, setPoolPreviewLoading] = useState(false);
+  const [draggingItemId, setDraggingItemId] = useState<number | null>(null);
   const [poolError, setPoolError] = useState<string | null>(null);
   const [bracketNodes, setBracketNodes] = useState<BracketNode[]>([]);
   const [bracketEdges, setBracketEdges] = useState<BracketEdge[]>([]);
@@ -131,6 +161,9 @@ export default function StaffPage() {
   const [edgeSourceId, setEdgeSourceId] = useState("");
   const [edgeTargetId, setEdgeTargetId] = useState("");
   const [bracketError, setBracketError] = useState<string | null>(null);
+  const [draggingNodeId, setDraggingNodeId] = useState<number | null>(null);
+  const [savingNodePositionId, setSavingNodePositionId] = useState<number | null>(null);
+  const bracketBoardRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -166,7 +199,7 @@ export default function StaffPage() {
       setParticipants(partData.participants ?? []);
 
       // Noticias
-      const newsRes = await fetch("/api/news");
+      const newsRes = await fetch("/api/news?include_unpublished=1");
       const newsData = await newsRes.json();
       setNewsList(newsData.news ?? []);
 
@@ -176,6 +209,9 @@ export default function StaffPage() {
       if (maintenanceRes.ok) {
         setMaintenanceEnabled(Boolean(maintenanceData.maintenance?.maintenance_enabled));
         setMaintenanceMessage(maintenanceData.maintenance?.maintenance_message ?? "");
+        setMaintenanceWhitelist(maintenanceData.maintenance?.maintenance_whitelist_text ?? "");
+        setMaintenanceTemplate(maintenanceData.maintenance?.maintenance_template ?? "default");
+        setMaintenanceBannerEnabled(Boolean(maintenanceData.maintenance?.maintenance_banner_enabled ?? true));
         if (maintenanceData.maintenance?.maintenance_ends_at) {
           const date = new Date(maintenanceData.maintenance.maintenance_ends_at);
           const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
@@ -251,6 +287,9 @@ export default function StaffPage() {
         title: newsTitle,
         content: newsContent,
         image_url: newsImage || null,
+        publish_at: newsPublishAt || null,
+        is_published: !newsIsDraft,
+        is_hidden: newsIsHidden,
       }),
     });
 
@@ -258,7 +297,10 @@ export default function StaffPage() {
       setNewsTitle("");
       setNewsContent("");
       setNewsImage("");
-      const newsRes = await fetch("/api/news");
+      setNewsPublishAt("");
+      setNewsIsDraft(false);
+      setNewsIsHidden(false);
+      const newsRes = await fetch("/api/news?include_unpublished=1");
       const newsData = await newsRes.json();
       setNewsList(newsData.news ?? []);
     } else {
@@ -273,6 +315,18 @@ export default function StaffPage() {
     if (res.ok) setNewsList((prev) => prev.filter((n) => n.id !== id));
   }
 
+  async function handleToggleNews(id: number, patch: { is_published?: boolean; is_hidden?: boolean }) {
+    const res = await fetch(`/api/news/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    });
+    if (!res.ok) return;
+    const newsRes = await fetch("/api/news?include_unpublished=1");
+    const newsData = await newsRes.json();
+    setNewsList(newsData.news ?? []);
+  }
+
   async function handleSaveMaintenance() {
     setSavingMaintenance(true);
     setMaintenanceError(null);
@@ -283,6 +337,9 @@ export default function StaffPage() {
         enabled: maintenanceEnabled,
         ends_at: maintenanceEndsAt || null,
         message: maintenanceMessage || null,
+        whitelist_text: maintenanceWhitelist || null,
+        template: maintenanceTemplate,
+        banner_enabled: maintenanceBannerEnabled,
       }),
     });
 
@@ -331,6 +388,14 @@ export default function StaffPage() {
 
   async function handleAddBeatmap() {
     setPoolError(null);
+    if (poolPreview?.is_duplicate) {
+      setPoolError("Ese beatmap ya existe en este bloque.");
+      return;
+    }
+    if (poolPreview?.is_mania === false) {
+      setPoolError("Solo se permiten beatmaps de osu!mania.");
+      return;
+    }
     const res = await fetch("/api/staff/mappools", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -346,6 +411,48 @@ export default function StaffPage() {
     if (!res.ok) return setPoolError(data.error ?? "No se pudo agregar mapa.");
     setPoolBeatmapUrl("");
     setPoolMods("");
+    setPoolPreview(null);
+    await refreshMappools();
+  }
+
+  async function handlePreviewBeatmap() {
+    if (!poolBeatmapUrl.trim()) return;
+    setPoolError(null);
+    setPoolPreviewLoading(true);
+    const res = await fetch("/api/staff/mappools", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "preview_item",
+        collection_id: poolTargetId ? Number(poolTargetId) : null,
+        beatmap_url: poolBeatmapUrl,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setPoolPreview(null);
+      setPoolError(data.error ?? "No se pudo previsualizar el beatmap.");
+    } else {
+      setPoolPreview(data.preview ?? null);
+    }
+    setPoolPreviewLoading(false);
+  }
+
+  async function handleReorderPoolItems(collectionId: number, orderedIds: number[]) {
+    const res = await fetch("/api/staff/mappools", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "reorder_items",
+        collection_id: collectionId,
+        ordered_item_ids: orderedIds,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setPoolError(data.error ?? "No se pudo reordenar el mappool.");
+      return;
+    }
     await refreshMappools();
   }
 
@@ -420,6 +527,54 @@ export default function StaffPage() {
     await fetch(`/api/staff/bracket?type=edge&id=${id}`, { method: "DELETE" });
     await refreshBracket();
   }
+
+  async function handleDragBracketNodeEnd(event: DragEvent<HTMLDivElement>, nodeId: number) {
+    event.preventDefault();
+    const board = bracketBoardRef.current;
+    const target = bracketNodes.find((node) => node.id === nodeId);
+    if (!board || !target) return;
+
+    const rect = board.getBoundingClientRect();
+    const nextX = Math.max(0, Math.round(event.clientX - rect.left - 100));
+    const nextY = Math.max(0, Math.round(event.clientY - rect.top - 45));
+
+    setBracketNodes((prev) =>
+      prev.map((node) => (node.id === nodeId ? { ...node, x: nextX, y: nextY } : node))
+    );
+    setSavingNodePositionId(nodeId);
+    setBracketError(null);
+    const res = await fetch("/api/staff/bracket", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "upsert_node",
+        id: nodeId,
+        stage: target.stage,
+        scheduled_at: target.scheduled_at,
+        x: nextX,
+        y: nextY,
+        team1: target.team1,
+        team2: target.team2,
+        score1: target.score1 ?? 0,
+        score2: target.score2 ?? 0,
+        best_of: target.best_of ?? 9,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setBracketError(data.error ?? "No se pudo guardar la posición del nodo.");
+    } else {
+      await refreshBracket();
+    }
+    setSavingNodePositionId(null);
+    setDraggingNodeId(null);
+  }
+
+  const bracketCanvasSize = useMemo(() => {
+    const width = Math.max(900, ...bracketNodes.map((node) => node.x + 260));
+    const height = Math.max(400, ...bracketNodes.map((node) => node.y + 140));
+    return { width, height };
+  }, [bracketNodes]);
 
   if (pageLoading) return <div className="text-white/70">Cargando...</div>;
   if (unauthorized)
@@ -639,18 +794,68 @@ export default function StaffPage() {
             <input value={poolMods} onChange={(e) => setPoolMods(e.target.value)} placeholder="Etiqueta mod (NM1, DT2, etc.)" className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
             <input type="color" value={poolItemColor} onChange={(e) => setPoolItemColor(e.target.value)} className="h-10 rounded-lg bg-transparent" />
           </div>
-          <Button className="w-fit rounded-xl" onClick={handleAddBeatmap}>Agregar mapa al bloque</Button>
+          <div className="flex flex-wrap gap-2">
+            <Button className="w-fit rounded-xl" variant="secondary" onClick={handlePreviewBeatmap} disabled={poolPreviewLoading}>
+              {poolPreviewLoading ? "Consultando..." : "Previsualizar"}
+            </Button>
+            <Button className="w-fit rounded-xl" onClick={handleAddBeatmap}>Agregar mapa al bloque</Button>
+          </div>
+          {poolPreview && (
+            <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-sm text-white/80">
+              <p className="font-semibold text-white">{poolPreview.artist} - {poolPreview.title}</p>
+              <p className="text-xs text-white/60">
+                {poolPreview.version} · {typeof poolPreview.star_rating === "number" ? `${poolPreview.star_rating.toFixed(2)}★` : "Sin star rating"}
+              </p>
+              <p className={`text-xs mt-1 ${poolPreview.is_mania === false ? "text-red-300" : "text-emerald-300"}`}>
+                {poolPreview.is_mania === false ? "Modo no válido: este beatmap no es mania." : "Modo válido (mania o no verificable)."}
+              </p>
+              {poolPreview.is_duplicate && <p className="text-xs mt-1 text-amber-300">Beatmap duplicado en este bloque.</p>}
+            </div>
+          )}
           <p className="text-xs text-white/50">Soporta links como: osu.ppy.sh/beatmaps/ID, /b/ID y /beatmapsets/...#mania/ID</p>
           {poolError && <p className="text-sm text-red-300">{poolError}</p>}
 
           <div className="mt-2 grid gap-2">
             {mappools.map((pool) => (
-              <div key={pool.id} className="rounded-lg border border-white/10 p-3 flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-white font-semibold">{pool.title} <span className="text-white/50 text-xs">({pool.stage || "sin etapa"})</span></p>
-                  <p className="text-xs text-white/60">{pool.items.length} mapas</p>
+              <div key={pool.id} className="rounded-lg border border-white/10 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-white font-semibold">{pool.title} <span className="text-white/50 text-xs">({pool.stage || "sin etapa"})</span></p>
+                    <p className="text-xs text-white/60">{pool.items.length} mapas</p>
+                  </div>
+                  <Button variant="destructive" className="rounded-xl" onClick={() => handleDeleteMappool(pool.id)}>Eliminar</Button>
                 </div>
-                <Button variant="destructive" className="rounded-xl" onClick={() => handleDeleteMappool(pool.id)}>Eliminar</Button>
+                <div className="mt-3 grid gap-2">
+                  {pool.items.map((item) => (
+                    <div
+                      key={item.id}
+                      draggable
+                      onDragStart={() => setDraggingItemId(item.id)}
+                      onDragOver={(event) => event.preventDefault()}
+                      onDrop={async () => {
+                        if (!draggingItemId || draggingItemId === item.id) return;
+                        const next = [...pool.items];
+                        const from = next.findIndex((entry) => entry.id === draggingItemId);
+                        const to = next.findIndex((entry) => entry.id === item.id);
+                        if (from < 0 || to < 0) return;
+                        const [moved] = next.splice(from, 1);
+                        next.splice(to, 0, moved);
+                        setMappools((prev) =>
+                          prev.map((entry) => (entry.id === pool.id ? { ...entry, items: next } : entry))
+                        );
+                        setDraggingItemId(null);
+                        await handleReorderPoolItems(pool.id, next.map((entry) => entry.id));
+                      }}
+                      className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/80 bg-black/20 cursor-move"
+                    >
+                      <span className="text-white/50 mr-2">#{item.sort_order + 1}</span>
+                      <span className="font-semibold">{item.mods || "MOD"}</span>
+                      <span className="mx-2 text-white/40">·</span>
+                      <span>{item.artist || "Unknown Artist"} - {item.title || "Beatmap"}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-2 text-[11px] text-white/40">Arrastra y suelta para reordenar mapas.</p>
               </div>
             ))}
           </div>
@@ -668,6 +873,35 @@ export default function StaffPage() {
       </div>
       <Card className="mt-4 rounded-2xl bg-white/5 border-white/10">
         <CardContent className="p-6 grid gap-3">
+          <div
+            ref={bracketBoardRef}
+            className="relative overflow-auto rounded-xl border border-white/10 bg-[#0f1425] p-3"
+            style={{ minHeight: 280 }}
+          >
+            <div className="relative" style={{ width: bracketCanvasSize.width, height: bracketCanvasSize.height }}>
+              {bracketNodes.map((node) => (
+                <div
+                  key={`drag-node-${node.id}`}
+                  draggable
+                  onDragStart={() => setDraggingNodeId(node.id)}
+                  onDragEnd={(event) => handleDragBracketNodeEnd(event, node.id)}
+                  className={`absolute w-[200px] rounded-lg border p-2 text-xs cursor-grab ${
+                    draggingNodeId === node.id ? "border-purple-400 bg-purple-500/20" : "border-white/20 bg-slate-900/70"
+                  }`}
+                  style={{ left: node.x, top: node.y }}
+                >
+                  <p className="font-semibold text-white">#{node.id} · {node.stage || "Etapa"}</p>
+                  <p className="text-white/70">{node.team1 || "TBD"} vs {node.team2 || "TBD"}</p>
+                  <p className="text-white/50">x:{node.x} y:{node.y}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <p className="text-xs text-white/50">
+            Arrastra nodos en el área para cambiar su posición y guardar x/y automáticamente.
+            {savingNodePositionId ? ` Guardando nodo #${savingNodePositionId}...` : ""}
+          </p>
+
           <div className="grid md:grid-cols-3 gap-3">
             <input value={nodeStage} onChange={(e) => setNodeStage(e.target.value)} placeholder="Etapa (R16, QF...)" className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
             <input type="datetime-local" value={nodeDate} onChange={(e) => setNodeDate(e.target.value)} className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
@@ -753,6 +987,41 @@ export default function StaffPage() {
             />
           </div>
 
+          <div>
+            <label className="text-sm text-white/50 mb-1 block">
+              Whitelist temporal (IDs/username/IP separados por coma o salto de línea)
+            </label>
+            <textarea
+              value={maintenanceWhitelist}
+              onChange={(e) => setMaintenanceWhitelist(e.target.value)}
+              rows={2}
+              placeholder="12345, adminUser, 203.0.113.20"
+              className="w-full bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/30 p-3 text-sm resize-y focus:outline-none focus:ring-1 focus:ring-purple-500"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm text-white/50 mb-1 block">Plantilla visual</label>
+            <select
+              value={maintenanceTemplate}
+              onChange={(e) => setMaintenanceTemplate(e.target.value)}
+              className="bg-white/5 border border-white/10 text-white p-2 rounded-lg"
+            >
+              <option value="default">Default</option>
+              <option value="minimal">Minimal</option>
+              <option value="warning">Warning</option>
+            </select>
+          </div>
+
+          <label className="flex items-center gap-3 text-white">
+            <input
+              type="checkbox"
+              checked={maintenanceBannerEnabled}
+              onChange={(e) => setMaintenanceBannerEnabled(e.target.checked)}
+            />
+            Mostrar banner público de mantenimiento en Home
+          </label>
+
           {maintenanceError && <p className="text-red-400 text-sm">{maintenanceError}</p>}
           <Button
             className="rounded-xl bg-amber-600 hover:bg-amber-500 w-fit"
@@ -796,6 +1065,37 @@ export default function StaffPage() {
 
           <div>
             <label className="text-sm text-white/50 mb-1 block">
+              Publicar en (opcional)
+            </label>
+            <input
+              type="datetime-local"
+              value={newsPublishAt}
+              onChange={(e) => setNewsPublishAt(e.target.value)}
+              className="bg-white/5 border-white/10 text-white placeholder:text-white/30 w-full p-2 rounded-lg"
+            />
+          </div>
+
+          <div className="flex flex-wrap gap-4">
+            <label className="flex items-center gap-2 text-sm text-white/80">
+              <input
+                type="checkbox"
+                checked={newsIsDraft}
+                onChange={(e) => setNewsIsDraft(e.target.checked)}
+              />
+              Guardar como borrador (no publicar)
+            </label>
+            <label className="flex items-center gap-2 text-sm text-white/80">
+              <input
+                type="checkbox"
+                checked={newsIsHidden}
+                onChange={(e) => setNewsIsHidden(e.target.checked)}
+              />
+              Oculta para público
+            </label>
+          </div>
+
+          <div>
+            <label className="text-sm text-white/50 mb-1 block">
               Contenido (BBCode)
             </label>
             <textarea
@@ -833,14 +1133,36 @@ export default function StaffPage() {
                     year: "numeric",
                   })}
                 </p>
+                <p className="text-white/40 text-xs mt-1">
+                  {item.is_published ? "Publicado" : "Borrador"} · {item.is_hidden ? "Oculto" : "Visible"} ·{" "}
+                  {item.publish_at ? `publish_at: ${new Date(item.publish_at).toLocaleString("es-MX")}` : "sin fecha programada"}
+                </p>
               </div>
-              <Button
-                variant="destructive"
-                className="rounded-xl"
-                onClick={() => handleDeleteNews(item.id)}
-              >
-                Eliminar
-              </Button>
+              <div className="flex flex-wrap gap-2 justify-end">
+                <Button
+                  className="rounded-xl"
+                  variant="secondary"
+                  onClick={() =>
+                    handleToggleNews(item.id, { is_published: !(item.is_published ?? false) })
+                  }
+                >
+                  {item.is_published ? "Pasar a borrador" : "Publicar"}
+                </Button>
+                <Button
+                  className="rounded-xl"
+                  variant="outline"
+                  onClick={() => handleToggleNews(item.id, { is_hidden: !(item.is_hidden ?? false) })}
+                >
+                  {item.is_hidden ? "Mostrar" : "Ocultar"}
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="rounded-xl"
+                  onClick={() => handleDeleteNews(item.id)}
+                >
+                  Eliminar
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ))}
