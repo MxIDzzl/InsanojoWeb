@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
+import { getMaintenanceConfig } from "@/lib/site-maintenance";
+import MaintenanceCountdown from "@/components/maintenance-countdown";
 
 type NewsItem = {
   id: number;
@@ -11,6 +13,7 @@ type NewsItem = {
 };
 
 export default async function Home() {
+  const maintenance = await getMaintenanceConfig();
   const { data: newsData } = await supabase
     .from("news")
     .select("id, title, content, created_at")
@@ -23,6 +26,19 @@ export default async function Home() {
     <main className="min-h-screen w-full">
       {/* HERO SECTION */}
       <section className="relative overflow-hidden">
+        {maintenance.maintenance_enabled && maintenance.maintenance_banner_enabled && (
+          <div className="relative z-20 max-w-6xl mx-auto px-6 pt-6">
+            <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 p-4">
+              <p className="text-sm font-semibold text-amber-200">Modo mantenimiento activo</p>
+              <p className="mt-1 text-sm text-white/80">
+                {maintenance.maintenance_message ?? "Estamos haciendo mejoras. Volveremos pronto."}
+              </p>
+              {maintenance.maintenance_ends_at && (
+                <MaintenanceCountdown targetDate={maintenance.maintenance_ends_at} />
+              )}
+            </div>
+          </div>
+        )}
         {/* Background glow */}
         <div className="absolute inset-0">
           <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-purple-600/20 blur-3xl" />

@@ -1,7 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import Navbar from "@/components/navbar";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { verifySessionToken } from "@/lib/auth";
 import { getMaintenanceConfig } from "@/lib/site-maintenance";
 import MaintenanceCountdown from "@/components/maintenance-countdown";
@@ -21,19 +21,41 @@ export default async function RootLayout({
 }) {
   const maintenance = await getMaintenanceConfig();
   const cookieStore = await cookies();
+  const headerStore = await headers();
   const token = cookieStore.get("session")?.value;
 
   let isStaff = false;
+  let sessionUser: { id?: number; username?: string } | null = null;
   if (token) {
     try {
-      const user: any = verifySessionToken(token);
+      const user = verifySessionToken(token) as { role?: string | null; id?: number; username?: string };
+      sessionUser = user;
       isStaff = user?.role === "owner" || user?.role === "host";
     } catch {
       isStaff = false;
+      sessionUser = null;
     }
   }
 
-  const maintenanceEnabledForUser = maintenance.maintenance_enabled && !isStaff;
+  const forwardedFor = headerStore.get("x-forwarded-for") ?? "";
+  const requestIp = forwardedFor.split(",")[0]?.trim() || null;
+  const whitelist = (maintenance.maintenance_whitelist_text ?? "")
+    .split(/[\n,]/)
+    .map((entry) => entry.trim().toLowerCase())
+    .filter(Boolean);
+  const whitelisted =
+    Boolean(sessionUser?.id && whitelist.includes(String(sessionUser.id).toLowerCase())) ||
+    Boolean(sessionUser?.username && whitelist.includes(sessionUser.username.toLowerCase())) ||
+    Boolean(requestIp && whitelist.includes(requestIp.toLowerCase()));
+
+  const maintenanceEnabledForUser = maintenance.maintenance_enabled && !isStaff && !whitelisted;
+  const template = maintenance.maintenance_template ?? "default";
+  const templateClasses =
+    template === "warning"
+      ? "rounded-2xl border border-amber-400/30 bg-amber-500/10 p-8"
+      : template === "minimal"
+        ? "rounded-2xl border border-white/10 bg-black/25 p-8"
+        : "rounded-2xl border border-purple-400/20 bg-purple-500/10 p-8";
 
   return (
     <html lang="es">
@@ -42,7 +64,7 @@ export default async function RootLayout({
 
         <main className="max-w-6xl mx-auto px-6 py-10">
           {maintenanceEnabledForUser ? (
-            <div className="py-20">
+            <div className={`py-20 ${templateClasses}`}>
               <h1 className="text-4xl font-extrabold text-white tracking-tight">Sitio en mantenimiento</h1>
               <p className="mt-4 text-white/70 max-w-2xl">
                 {maintenance.maintenance_message ??
