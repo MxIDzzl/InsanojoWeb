@@ -55,7 +55,7 @@ export default function MappoolsPage() {
   return (
     <div>
       <h1 className="text-4xl font-extrabold text-white tracking-tight">Mappools</h1>
-      <p className="mt-3 text-white/60">Vista tipo post en formato tabla (sin navegación por canvas).</p>
+      <p className="mt-3 text-white/60"></p>
       {error && <p className="mt-3 text-red-300 text-sm">{error}</p>}
 
       <div className="mt-8 space-y-6">
