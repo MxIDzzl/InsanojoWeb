@@ -52,6 +52,17 @@ export default function Navbar() {
   }
 
   const isStaff = user?.role === "owner" || user?.role === "host";
+  const links = [
+    { href: "/rules", label: "Reglas" },
+    { href: "/participants", label: "Participantes" },
+    { href: "/mappools", label: "Mappools" },
+    { href: "/bracket", label: "Bracket" },
+    { href: "/schedule", label: "Calendario" },
+    { href: "/news", label: "Noticias" },
+    { href: "/prizes", label: "Premios" },
+    { href: "/staff-list", label: "Staff" },
+    { href: "/faq", label: "FAQ" },
+  ];
 
   return (
     <header className="sticky top-0 z-50 border-b border-violet-200/20 bg-[#0f0b20]/90 backdrop-blur-xl">
