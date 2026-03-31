@@ -65,10 +65,22 @@ export default function BracketPage() {
 
   if (loading) return <div className="text-white/70">Cargando bracket...</div>;
 
+  function stageClass(stage: string | null) {
+    const value = (stage ?? "").toLowerCase();
+    if (value.includes("final")) return "bg-amber-300/20 text-amber-100";
+    if (value.includes("semi")) return "bg-cyan-300/20 text-cyan-100";
+    if (value.includes("quarter")) return "bg-fuchsia-300/20 text-fuchsia-100";
+    if (value.includes("play")) return "bg-emerald-300/20 text-emerald-100";
+    return "bg-white/15 text-white";
+  }
+
   return (
     <div>
       <h1 className="text-4xl font-extrabold text-white tracking-tight">Bracket</h1>
       <p className="mt-3 text-white/60">Navega con zoom y desplazamiento libre.</p>
+      {nodes.length === 0 && !error && (
+        <p className="mt-2 text-sm text-white/60">Aún no hay duelos cargados. Staff puede crearlos desde el panel.</p>
+      )}
       {error && <p className="mt-2 text-sm text-red-300">{error}</p>}
 
       <div
@@ -142,7 +154,7 @@ export default function BracketPage() {
                 style={{ left: node.x, top: node.y }}
               >
                 <div className="flex items-center justify-between text-[10px] uppercase tracking-wide text-white/70">
-                  <span>{stage}</span>
+                  <span className={`rounded px-2 py-0.5 ${stageClass(stage)}`}>{stage}</span>
                   <span>BO{node.best_of ?? 9}</span>
                 </div>
                 <div className="mt-2 grid gap-1 text-sm text-white">

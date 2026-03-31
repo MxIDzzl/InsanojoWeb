@@ -127,6 +127,7 @@ export default function StaffPage() {
   const [nodeScore1, setNodeScore1] = useState("0");
   const [nodeScore2, setNodeScore2] = useState("0");
   const [nodeBestOf, setNodeBestOf] = useState("9");
+  const [editingNodeId, setEditingNodeId] = useState("");
   const [edgeSourceId, setEdgeSourceId] = useState("");
   const [edgeTargetId, setEdgeTargetId] = useState("");
   const [bracketError, setBracketError] = useState<string | null>(null);
@@ -356,6 +357,7 @@ export default function StaffPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         type: "upsert_node",
+        id: editingNodeId ? Number(editingNodeId) : null,
         stage: nodeStage,
         scheduled_at: scheduledAt,
         x: Number(nodeX),
@@ -368,7 +370,7 @@ export default function StaffPage() {
       }),
     });
     const data = await res.json();
-    if (!res.ok) return setBracketError(data.error ?? "No se pudo crear duelo.");
+    if (!res.ok) return setBracketError(data.error ?? "No se pudo guardar duelo.");
     await refreshBracket();
   }
 
@@ -396,6 +398,26 @@ export default function StaffPage() {
 
   async function handleDeleteBracketNode(id: number) {
     await fetch(`/api/staff/bracket?type=node&id=${id}`, { method: "DELETE" });
+    await refreshBracket();
+  }
+
+  function handleLoadBracketNode(id: string) {
+    setEditingNodeId(id);
+    const target = bracketNodes.find((node) => String(node.id) === id);
+    if (!target) return;
+    setNodeStage(target.stage ?? "");
+    setNodeTeam1(target.team1 ?? "");
+    setNodeTeam2(target.team2 ?? "");
+    setNodeX(String(target.x ?? 0));
+    setNodeY(String(target.y ?? 0));
+    setNodeScore1(String(target.score1 ?? 0));
+    setNodeScore2(String(target.score2 ?? 0));
+    setNodeBestOf(String(target.best_of ?? 9));
+    setNodeDate(target.scheduled_at ? new Date(target.scheduled_at).toISOString().slice(0, 16) : "");
+  }
+
+  async function handleDeleteBracketEdge(id: number) {
+    await fetch(`/api/staff/bracket?type=edge&id=${id}`, { method: "DELETE" });
     await refreshBracket();
   }
 
@@ -618,6 +640,7 @@ export default function StaffPage() {
             <input type="color" value={poolItemColor} onChange={(e) => setPoolItemColor(e.target.value)} className="h-10 rounded-lg bg-transparent" />
           </div>
           <Button className="w-fit rounded-xl" onClick={handleAddBeatmap}>Agregar mapa al bloque</Button>
+          <p className="text-xs text-white/50">Soporta links como: osu.ppy.sh/beatmaps/ID, /b/ID y /beatmapsets/...#mania/ID</p>
           {poolError && <p className="text-sm text-red-300">{poolError}</p>}
 
           <div className="mt-2 grid gap-2">
@@ -636,7 +659,13 @@ export default function StaffPage() {
 
       {/* ── Bracket custom ── */}
       <h2 className="mt-14 text-2xl font-bold text-white">Bracket (editor staff)</h2>
-      <p className="mt-2 text-white/50 text-sm">Crea duelos manualmente, define etapa/fecha y conecta cada bloque.</p>
+      <p className="mt-2 text-white/50 text-sm">Crea y edita duelos manualmente, define etapa/fecha y conecta cada bloque.</p>
+      <div className="mt-2">
+        <select value={editingNodeId} onChange={(e) => handleLoadBracketNode(e.target.value)} className="bg-white/5 border border-white/10 text-white p-2 rounded-lg">
+          <option value="">Nuevo duelo</option>
+          {bracketNodes.map((node) => <option key={`edit-${node.id}`} value={node.id}>Editar #{node.id} · {node.team1 || "TBD"} vs {node.team2 || "TBD"}</option>)}
+        </select>
+      </div>
       <Card className="mt-4 rounded-2xl bg-white/5 border-white/10">
         <CardContent className="p-6 grid gap-3">
           <div className="grid md:grid-cols-3 gap-3">
@@ -650,7 +679,7 @@ export default function StaffPage() {
             <input value={nodeScore1} onChange={(e) => setNodeScore1(e.target.value)} placeholder="Score 1" className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
             <input value={nodeScore2} onChange={(e) => setNodeScore2(e.target.value)} placeholder="Score 2" className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
           </div>
-          <Button className="w-fit rounded-xl bg-indigo-600 hover:bg-indigo-500" onClick={handleCreateBracketNode}>Crear duelo</Button>
+          <Button className="w-fit rounded-xl bg-indigo-600 hover:bg-indigo-500" onClick={handleCreateBracketNode}>{editingNodeId ? "Guardar cambios" : "Crear duelo"}</Button>
 
           <div className="grid md:grid-cols-2 gap-3 mt-2">
             <select value={edgeSourceId} onChange={(e) => setEdgeSourceId(e.target.value)} className="bg-white/5 border border-white/10 text-white p-2 rounded-lg">
@@ -669,7 +698,18 @@ export default function StaffPage() {
             {bracketNodes.map((node) => (
               <div key={node.id} className="rounded-lg border border-white/10 p-2 flex items-center justify-between gap-2">
                 <p className="text-xs text-white/70">#{node.id} · {node.stage || "Etapa"} · {node.team1 || "TBD"} vs {node.team2 || "TBD"}</p>
-                <Button variant="destructive" className="rounded-xl" onClick={() => handleDeleteBracketNode(node.id)}>Eliminar</Button>
+                <div className="flex gap-2">
+                  <Button className="rounded-xl" variant="secondary" onClick={() => handleLoadBracketNode(String(node.id))}>Editar</Button>
+                  <Button variant="destructive" className="rounded-xl" onClick={() => handleDeleteBracketNode(node.id)}>Eliminar</Button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="grid gap-2 mt-2">
+            {bracketEdges.map((edge) => (
+              <div key={edge.id} className="rounded-lg border border-white/10 p-2 flex items-center justify-between gap-2">
+                <p className="text-xs text-white/70">Conexión #{edge.id}: {edge.source_id} → {edge.target_id}</p>
+                <Button variant="destructive" className="rounded-xl" onClick={() => handleDeleteBracketEdge(edge.id)}>Eliminar</Button>
               </div>
             ))}
           </div>
