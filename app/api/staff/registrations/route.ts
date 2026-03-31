@@ -26,17 +26,34 @@ export async function GET() {
       discord_username,
       status,
       created_at,
-      users (
+      users:users!registrations_osu_id_fkey (
         username,
-        avatar_url,
-        country_code
+        avatar_url
       )
     `)
     .eq("status", "pending")
     .order("created_at", { ascending: true });
 
   if (error) {
-    return NextResponse.json({ error: "Error al obtener registros." }, { status: 500 });
+    const fallback = await supabase
+      .from("registrations")
+      .select("id, osu_id, discord_username, status, created_at")
+      .eq("status", "pending")
+      .order("created_at", { ascending: true });
+
+    if (fallback.error) {
+      return NextResponse.json(
+        { error: `Error al obtener registros. ${fallback.error.message}` },
+        { status: 500 }
+      );
+    }
+
+    const normalized = (fallback.data ?? []).map((registration) => ({
+      ...registration,
+      users: null,
+    }));
+
+    return NextResponse.json({ registrations: normalized });
   }
 
   return NextResponse.json({ registrations: data });
