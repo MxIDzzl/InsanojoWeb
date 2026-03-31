@@ -13,6 +13,7 @@ type MappoolItem = {
   version: string | null;
   cover_url: string | null;
   star_rating: number | null;
+  sort_order?: number;
 };
 
 type MappoolCollection = {
@@ -28,34 +29,67 @@ export default function MappoolsPage() {
   const [mappools, setMappools] = useState<MappoolCollection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  async function loadMappools() {
-    setLoading(true);
-    setError(null);
-
-    const res = await fetch("/api/mappools", { cache: "no-store" });
-    const data = await res.json();
-
-    if (!res.ok) {
-      setError(data.error ?? "No se pudo cargar el mappool.");
-      setLoading(false);
-      return;
-    }
-
-    setMappools(data.mappools ?? []);
-    setLoading(false);
-  }
+  const [modFilter, setModFilter] = useState("ALL");
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
-    loadMappools();
+    let cancelled = false;
+    async function loadMappools() {
+      const res = await fetch("/api/mappools", { cache: "no-store" });
+      const data = await res.json();
+      if (cancelled) return;
+
+      if (!res.ok) {
+        setError(data.error ?? "No se pudo cargar el mappool.");
+        setLoading(false);
+        return;
+      }
+
+      setMappools(data.mappools ?? []);
+      setLoading(false);
+    }
+
+    void loadMappools();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (loading) return <div className="text-white/70">Cargando mappools...</div>;
 
+  const availableMods = Array.from(
+    new Set(
+      mappools
+        .flatMap((pool) => pool.items.map((item) => (item.mods ?? "").trim().toUpperCase()))
+        .map((mods) => mods.match(/^[A-Z]+/)?.[0] || "OTRO")
+        .filter(Boolean)
+    )
+  ).sort();
+
   return (
     <div>
       <h1 className="text-4xl font-extrabold text-white tracking-tight">Mappools</h1>
-      <p className="mt-3 text-white/60"></p>
+      <p className="mt-3 text-white/60">Filtra por mod, busca por artista/título y copia links de beatmap.</p>
+      <div className="mt-4 flex flex-wrap gap-3">
+        <select
+          value={modFilter}
+          onChange={(event) => setModFilter(event.target.value)}
+          className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+        >
+          <option value="ALL">Todos los mods</option>
+          {availableMods.map((mod) => (
+            <option key={mod} value={mod}>
+              {mod}
+            </option>
+          ))}
+        </select>
+        <input
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Buscar por artista o título..."
+          className="min-w-[240px] rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
+        />
+      </div>
       {error && <p className="mt-3 text-red-300 text-sm">{error}</p>}
 
       <div className="mt-8 space-y-6">
@@ -101,14 +135,30 @@ export default function MappoolsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {pool.items.length === 0 ? (
+                    {pool.items.filter((item) => {
+                      const normalizedMods = (item.mods ?? "").trim().toUpperCase();
+                      const modCode = normalizedMods.match(/^[A-Z]+/)?.[0] || "OTRO";
+                      const matchesMod = modFilter === "ALL" || modCode === modFilter;
+                      const haystack = `${item.artist ?? ""} ${item.title ?? ""}`.toLowerCase();
+                      const matchesSearch = !search.trim() || haystack.includes(search.trim().toLowerCase());
+                      return matchesMod && matchesSearch;
+                    }).length === 0 ? (
                       <tr>
                         <td colSpan={5} className="px-3 py-4 text-white/50">
-                          Este bloque todavía no tiene mapas.
+                          No hay mapas para el filtro actual.
                         </td>
                       </tr>
                     ) : (
-                      pool.items.map((map) => (
+                      pool.items
+                        .filter((item) => {
+                          const normalizedMods = (item.mods ?? "").trim().toUpperCase();
+                          const modCode = normalizedMods.match(/^[A-Z]+/)?.[0] || "OTRO";
+                          const matchesMod = modFilter === "ALL" || modCode === modFilter;
+                          const haystack = `${item.artist ?? ""} ${item.title ?? ""}`.toLowerCase();
+                          const matchesSearch = !search.trim() || haystack.includes(search.trim().toLowerCase());
+                          return matchesMod && matchesSearch;
+                        })
+                        .map((map) => (
                         <tr key={map.id} className="border-t border-white/10 align-middle hover:bg-white/5">
                           <td className="px-3 py-3">
                             <span
@@ -140,14 +190,25 @@ export default function MappoolsPage() {
                             {typeof map.star_rating === "number" ? map.star_rating.toFixed(2) : "-"}
                           </td>
                           <td className="px-3 py-3">
-                            <a
-                              href={map.beatmap_url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-purple-200 underline underline-offset-2"
-                            >
-                              Abrir
-                            </a>
+                            <div className="flex items-center gap-3">
+                              <a
+                                href={map.beatmap_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-purple-200 underline underline-offset-2"
+                              >
+                                Abrir
+                              </a>
+                              <button
+                                type="button"
+                                className="rounded bg-white/10 px-2 py-1 text-[11px] text-white hover:bg-white/20"
+                                onClick={async () => {
+                                  await navigator.clipboard.writeText(map.beatmap_url);
+                                }}
+                              >
+                                Copiar link
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))
