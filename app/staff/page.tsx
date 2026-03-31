@@ -220,6 +220,7 @@ export default function StaffPage() {
           registrations.map((reg) => {
             const action = actions[reg.id] ?? { id: reg.id, selectedRole: "participant", loading: false };
             const username = reg.users?.username ?? `osu! ID ${reg.osu_id}`;
+            const countryCode = reg.users?.country_code?.toUpperCase();
             const createdAt = new Date(reg.created_at).toLocaleString("es-MX", {
               day: "2-digit",
               month: "short",
@@ -235,6 +236,7 @@ export default function StaffPage() {
                     <p className="text-white font-semibold">{username}</p>
                     <p className="text-sm text-white/60">@{reg.discord_username}</p>
                     <p className="text-xs text-white/40 mt-1">
+                      {countryCode ? `${countryCode} · ` : ""}
                       Solicitó acceso el {createdAt}
                     </p>
                   </div>
@@ -294,6 +296,7 @@ export default function StaffPage() {
         ) : (
           participants.map((participant) => {
             const username = participant.users?.username ?? `osu! ID ${participant.osu_id}`;
+            const countryCode = participant.users?.country_code?.toUpperCase();
             const roundValue = participant.round ?? "qualifier";
             const isSaving = savingParticipant === participant.id;
 
@@ -304,6 +307,7 @@ export default function StaffPage() {
                     <p className="text-white font-semibold">{username}</p>
                     <p className="text-sm text-white/60">@{participant.discord_username}</p>
                     <p className="text-xs text-white/40 mt-1">
+                      {countryCode ? `${countryCode} · ` : ""}
                       {participant.eliminated ? "Eliminado" : "Activo"}
                     </p>
                   </div>
