@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { requireStaffUser } from "@/lib/staff-auth";
+import { logStaffAudit } from "@/lib/staff-audit";
 
 export async function POST(req: NextRequest) {
   const auth = await requireStaffUser();
@@ -32,6 +33,14 @@ export async function POST(req: NextRequest) {
       : await query.insert(payload);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    await logStaffAudit({
+      actor_id: auth.user.id,
+      actor_role: auth.user.role,
+      action: id ? "bracket.node.updated" : "bracket.node.created",
+      entity_type: "bracket_node",
+      entity_id: id ?? null,
+      metadata: payload,
+    });
     return NextResponse.json({ ok: true });
   }
 
@@ -43,6 +52,13 @@ export async function POST(req: NextRequest) {
 
     const { error } = await supabase.from("bracket_edges").insert({ source_id, target_id });
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    await logStaffAudit({
+      actor_id: auth.user.id,
+      actor_role: auth.user.role,
+      action: "bracket.edge.created",
+      entity_type: "bracket_edge",
+      entity_id: `${source_id}-${target_id}`,
+    });
     return NextResponse.json({ ok: true });
   }
 
@@ -68,5 +84,12 @@ export async function DELETE(req: NextRequest) {
 
   const { error } = await supabase.from(table).delete().eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  await logStaffAudit({
+    actor_id: auth.user.id,
+    actor_role: auth.user.role,
+    action: table === "bracket_nodes" ? "bracket.node.deleted" : "bracket.edge.deleted",
+    entity_type: table,
+    entity_id: id,
+  });
   return NextResponse.json({ ok: true });
 }

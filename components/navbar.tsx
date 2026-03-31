@@ -22,6 +22,7 @@ type User = {
 
 export default function Navbar() {
   const [user, setUser] = useState<User | null>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     async function loadUser() {
@@ -39,107 +40,156 @@ export default function Navbar() {
   }
 
   const isStaff = user?.role === "owner" || user?.role === "host";
+  const links = [
+    { href: "/rules", label: "Reglas" },
+    { href: "/participants", label: "Participantes" },
+    { href: "/mappools", label: "Mappools" },
+    { href: "/bracket", label: "Bracket" },
+    { href: "/schedule", label: "Calendario" },
+    { href: "/news", label: "Noticias" },
+    { href: "/prizes", label: "Premios" },
+    { href: "/staff-list", label: "Staff" },
+    { href: "/faq", label: "FAQ" },
+  ];
 
   return (
-    <header className="w-full border-b border-white/10 bg-black/30 backdrop-blur-md sticky top-0 z-50">
-      <nav className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-        {/* Logo */}
-        <Link href="/" className="text-xl font-bold tracking-wide text-purple-300">
-          Insanojo Mania Cup
-        </Link>
-
-        {/* Links */}
-        <div className="flex gap-6 text-sm font-medium text-white/70 items-center">
-          <Link href="/rules" className="hover:text-purple-300 transition">
-            Reglas
-          </Link>
-          <Link href="/participants" className="hover:text-purple-300 transition">
-            Participantes
-          </Link>
-          <Link href="/mappools" className="hover:text-purple-300 transition">
-            Mappools
-          </Link>
-          <Link href="/bracket" className="hover:text-purple-300 transition">
-            Bracket
-          </Link>
-          <Link href="/schedule" className="hover:text-purple-300 transition">
-            Calendario
-          </Link>
-          <Link href="/news" className="hover:text-purple-300 transition">
-            Noticias
-          </Link>
-          <Link href="/prizes" className="hover:text-purple-300 transition">
-            Premios
-          </Link>
-          <Link href="/staff-list" className="hover:text-purple-300 transition">
-            Staff
-          </Link>
-          <Link href="/faq" className="hover:text-purple-300 transition">
-            FAQ
+    <header className="w-full border-b border-violet-300/20 bg-[#120f24]/80 backdrop-blur-xl sticky top-0 z-50">
+      <nav className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+        <div className="flex items-center justify-between gap-3">
+          <Link href="/" className="inline-flex items-center gap-2 text-base sm:text-xl font-black tracking-wide uppercase">
+            <span className="h-2.5 w-2.5 rounded-full bg-rose-300/90" />
+            <span className="imc-title-gradient">Insanojo Mania Cup</span>
           </Link>
 
-          {/* Link registro — solo si está logueado */}
-          {user && (
-            <Link href="/register" className="hover:text-purple-300 transition">
-              Registro
-            </Link>
-          )}
+          <button
+            type="button"
+            onClick={() => setMobileOpen((prev) => !prev)}
+            className="md:hidden rounded-lg border border-white/15 px-3 py-2 text-sm text-white/90"
+            aria-label="Abrir menú"
+            aria-expanded={mobileOpen}
+          >
+            {mobileOpen ? "Cerrar" : "Menú"}
+          </button>
 
-          {/* Panel staff — solo owner/host */}
-          {isStaff && (
-            <Link
-              href="/staff"
-              className="hover:text-yellow-300 text-yellow-400/80 transition"
-            >
-              Staff
-            </Link>
-          )}
+          <div className="hidden md:flex gap-1 text-xs font-semibold text-white/70 items-center uppercase tracking-wide">
+            {links.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="rounded-lg px-3 py-2 hover:bg-violet-400/15 hover:text-violet-100 transition"
+              >
+                {link.label}
+              </Link>
+            ))}
 
-          {/* Login / User menu */}
-          {!user ? (
-            <Link
-              href="/login"
-              className="px-4 py-2 rounded-xl bg-purple-600 text-white font-semibold hover:bg-purple-500 transition shadow-md shadow-purple-500/20"
-            >
-              Login
-            </Link>
-          ) : (
-            <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-white/10 transition">
-                <Avatar className="w-8 h-8">
-                  <AvatarImage src={user.avatar_url} />
-                  <AvatarFallback>U</AvatarFallback>
-                </Avatar>
-                <span className="text-white font-semibold text-sm">
-                  {user.username}
-                </span>
-              </DropdownMenuTrigger>
+            {user && (
+              <Link href="/register" className="rounded-lg px-3 py-2 hover:bg-violet-400/15 hover:text-violet-100 transition">
+                Registro
+              </Link>
+            )}
 
-              <DropdownMenuContent className="w-56 bg-black/90 border border-white/10 text-white">
-                <DropdownMenuLabel>Cuenta</DropdownMenuLabel>
+            {isStaff && (
+              <Link href="/staff" className="hover:text-yellow-300 text-yellow-400/80 transition">
+                Staff
+              </Link>
+            )}
 
-                <DropdownMenuItem asChild>
-                  <Link href="/me">Ver perfil</Link>
-                </DropdownMenuItem>
+            {!user ? (
+              <Link
+                href="/login"
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-semibold transition shadow-md shadow-violet-900/50"
+              >
+                Login
+              </Link>
+            ) : (
+              <DropdownMenu>
+                <DropdownMenuTrigger className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-white/10 transition">
+                  <Avatar className="w-8 h-8">
+                    <AvatarImage src={user.avatar_url} />
+                    <AvatarFallback>U</AvatarFallback>
+                  </Avatar>
+                  <span className="text-white font-semibold text-sm">{user.username}</span>
+                </DropdownMenuTrigger>
 
-                {/* Acceso rápido al panel desde el dropdown también */}
-                {isStaff && (
+                <DropdownMenuContent className="w-56 bg-black/90 border border-white/10 text-white">
+                  <DropdownMenuLabel>Cuenta</DropdownMenuLabel>
                   <DropdownMenuItem asChild>
-                    <Link href="/staff" className="text-yellow-300">
-                      Panel Staff
-                    </Link>
+                    <Link href="/me">Ver perfil</Link>
                   </DropdownMenuItem>
-                )}
-
-                <DropdownMenuSeparator className="bg-white/10" />
-
-                <DropdownMenuItem onClick={logout} className="text-red-300">
-                  Cerrar sesión
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+                  {isStaff && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/staff" className="text-yellow-300">
+                        Panel Staff
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator className="bg-white/10" />
+                  <DropdownMenuItem onClick={logout} className="text-red-300">
+                    Cerrar sesión
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
         </div>
+
+        {mobileOpen && (
+          <div className="mt-3 md:hidden imc-panel p-3">
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              {links.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMobileOpen(false)}
+                  className="rounded-lg border border-white/10 px-3 py-2 text-white/85 hover:bg-violet-400/15"
+                >
+                  {link.label}
+                </Link>
+              ))}
+              {user && (
+                <Link
+                  href="/register"
+                  onClick={() => setMobileOpen(false)}
+                  className="rounded-lg border border-white/10 px-3 py-2 text-white/85 hover:bg-white/10"
+                >
+                  Registro
+                </Link>
+              )}
+              {isStaff && (
+                <Link
+                  href="/staff"
+                  onClick={() => setMobileOpen(false)}
+                  className="rounded-lg border border-yellow-300/30 px-3 py-2 text-yellow-300 hover:bg-yellow-300/10"
+                >
+                  Staff
+                </Link>
+              )}
+            </div>
+
+            {!user ? (
+              <Link
+                href="/login"
+                onClick={() => setMobileOpen(false)}
+                className="mt-3 block rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-2 text-center text-sm font-semibold text-white"
+              >
+                Login
+              </Link>
+            ) : (
+              <div className="mt-3 flex items-center justify-between rounded-xl border border-white/10 px-3 py-2">
+                <div className="flex items-center gap-2">
+                  <Avatar className="w-7 h-7">
+                    <AvatarImage src={user.avatar_url} />
+                    <AvatarFallback>U</AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm text-white">{user.username}</span>
+                </div>
+                <button type="button" onClick={logout} className="text-sm text-red-300">
+                  Salir
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </nav>
     </header>
   );

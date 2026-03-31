@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { requireStaffUser } from "@/lib/staff-auth";
+import { logStaffAudit } from "@/lib/staff-audit";
 
 function normalizeHex(color?: string) {
   if (!color) return "#a855f7";
@@ -91,6 +92,7 @@ async function resolveWithOsuApi(beatmapId: number) {
 
   return {
     beatmap_id: beatmapId,
+    mode: typeof beatmap.mode === "string" ? beatmap.mode : null,
     artist: beatmap.beatmapset?.artist ?? "Unknown Artist",
     title: beatmap.beatmapset?.title ?? "Unknown Title",
     version: beatmap.version ?? "Unknown Difficulty",
@@ -110,7 +112,7 @@ async function resolveBeatmap(rawBeatmapUrl: string) {
 
   const oembedResolved = await resolveWithOembed(normalizedUrl, beatmapId);
   if (oembedResolved) {
-    return { beatmap_url: normalizedUrl, ...oembedResolved };
+    return { beatmap_url: normalizedUrl, mode: null, ...oembedResolved };
   }
 
   throw new Error(
@@ -147,6 +149,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    await logStaffAudit({
+      actor_id: auth.user.id,
+      actor_role: auth.user.role,
+      action: "mappool.collection.created",
+      entity_type: "mappool_collection",
+      entity_id: data.id,
+      metadata: { title: title.trim(), stage: stage?.trim() || null },
+    });
+
     return NextResponse.json({ ok: true, id: data.id });
   }
 
@@ -159,8 +170,28 @@ export async function POST(req: NextRequest) {
     let resolved;
     try {
       resolved = await resolveBeatmap(beatmap_url.trim());
-    } catch (error: any) {
-      return NextResponse.json({ error: error.message ?? "No se pudo resolver beatmap." }, { status: 400 });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "No se pudo resolver beatmap.";
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+    if (resolved.mode && resolved.mode !== "mania") {
+      return NextResponse.json({ error: "Solo se permiten beatmaps de osu!mania." }, { status: 400 });
+    }
+
+    const { data: existingItems, error: existingError } = await supabase
+      .from("mappool_items")
+      .select("id, beatmap_id, beatmap_url")
+      .eq("collection_id", Number(collection_id));
+    if (existingError) {
+      return NextResponse.json({ error: existingError.message }, { status: 500 });
+    }
+    const duplicate = (existingItems ?? []).some((item) =>
+      resolved.beatmap_id
+        ? item.beatmap_id === resolved.beatmap_id
+        : item.beatmap_url === resolved.beatmap_url
+    );
+    if (duplicate) {
+      return NextResponse.json({ error: "Ese beatmap ya existe dentro de este bloque." }, { status: 409 });
     }
 
     const { error } = await supabase.from("mappool_items").insert({
@@ -180,6 +211,84 @@ export async function POST(req: NextRequest) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    await logStaffAudit({
+      actor_id: auth.user.id,
+      actor_role: auth.user.role,
+      action: "mappool.item.created",
+      entity_type: "mappool_item",
+      entity_id: `${collection_id}:${resolved.beatmap_id ?? resolved.beatmap_url}`,
+      metadata: { collection_id, mods: mods?.trim() || null, beatmap_url: resolved.beatmap_url },
+    });
+
+    return NextResponse.json({ ok: true });
+  }
+
+  if (body.type === "preview_item") {
+    const { collection_id, beatmap_url } = body;
+    if (!beatmap_url?.trim()) {
+      return NextResponse.json({ error: "beatmap_url es obligatorio." }, { status: 400 });
+    }
+
+    let resolved;
+    try {
+      resolved = await resolveBeatmap(beatmap_url.trim());
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "No se pudo resolver beatmap.";
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+
+    let duplicate = false;
+    if (collection_id) {
+      const { data: existingItems } = await supabase
+        .from("mappool_items")
+        .select("id, beatmap_id, beatmap_url")
+        .eq("collection_id", Number(collection_id));
+      duplicate = (existingItems ?? []).some((item) =>
+        resolved.beatmap_id
+          ? item.beatmap_id === resolved.beatmap_id
+          : item.beatmap_url === resolved.beatmap_url
+      );
+    }
+
+    return NextResponse.json({
+      ok: true,
+      preview: {
+        ...resolved,
+        is_mania: resolved.mode === null ? null : resolved.mode === "mania",
+        is_duplicate: duplicate,
+      },
+    });
+  }
+
+  if (body.type === "reorder_items") {
+    const { collection_id, ordered_item_ids } = body;
+    if (!collection_id || !Array.isArray(ordered_item_ids)) {
+      return NextResponse.json(
+        { error: "collection_id y ordered_item_ids son obligatorios." },
+        { status: 400 }
+      );
+    }
+
+    const uniqueIds = Array.from(new Set(ordered_item_ids.map((id: unknown) => Number(id)))).filter(Boolean);
+
+    for (const [index, itemId] of uniqueIds.entries()) {
+      const { error } = await supabase
+        .from("mappool_items")
+        .update({ sort_order: index })
+        .eq("id", itemId)
+        .eq("collection_id", Number(collection_id));
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    await logStaffAudit({
+      actor_id: auth.user.id,
+      actor_role: auth.user.role,
+      action: "mappool.items.reordered",
+      entity_type: "mappool_collection",
+      entity_id: collection_id,
+      metadata: { ordered_item_ids: uniqueIds },
+    });
 
     return NextResponse.json({ ok: true });
   }
@@ -215,6 +324,14 @@ export async function DELETE(req: NextRequest) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  await logStaffAudit({
+    actor_id: auth.user.id,
+    actor_role: auth.user.role,
+    action: `${type}.deleted`,
+    entity_type: table,
+    entity_id: id,
+  });
 
   return NextResponse.json({ ok: true });
 }
