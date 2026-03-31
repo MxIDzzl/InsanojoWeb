@@ -68,6 +68,15 @@ export default function Navbar() {
           <Link href="/news" className="hover:text-purple-300 transition">
             Noticias
           </Link>
+          <Link href="/prizes" className="hover:text-purple-300 transition">
+            Premios
+          </Link>
+          <Link href="/staff-list" className="hover:text-purple-300 transition">
+            Staff
+          </Link>
+          <Link href="/faq" className="hover:text-purple-300 transition">
+            FAQ
+          </Link>
 
           {/* Link registro — solo si está logueado */}
           {user && (
