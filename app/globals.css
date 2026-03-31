@@ -53,12 +53,25 @@
 
 body {
   background:
-    radial-gradient(1000px 560px at 20% -5%, rgba(124, 58, 237, 0.2), transparent 62%),
-    radial-gradient(1100px 600px at 90% 0%, rgba(67, 56, 202, 0.14), transparent 66%),
-    linear-gradient(180deg, #0a0b11 0%, #090a10 45%, #07080d 100%);
+    radial-gradient(1000px 600px at -8% -10%, rgba(88, 28, 135, 0.4), transparent 60%),
+    radial-gradient(900px 580px at 106% 8%, rgba(127, 29, 29, 0.3), transparent 62%),
+    linear-gradient(135deg, #1c0d3b 0%, #1a0a33 28%, #220b2f 58%, #300d27 100%);
   color: white;
   min-height: 100vh;
   text-rendering: geometricPrecision;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 20px 20px, rgba(255, 255, 255, 0.09) 1px, transparent 1.5px),
+    radial-gradient(circle at 6px 6px, rgba(167, 139, 250, 0.15) 0.7px, transparent 1.2px);
+  background-size: 36px 36px, 72px 72px;
+  opacity: 0.28;
+  z-index: -1;
 }
 
 ::selection {
@@ -153,7 +166,7 @@ body {
   }
 
   .imc-panel {
-    @apply rounded-2xl border border-white/10 bg-gradient-to-b from-slate-900/85 to-slate-950/90 shadow-[0_20px_70px_-45px_rgba(79,70,229,0.35)];
+    @apply rounded-2xl border border-violet-300/20 bg-gradient-to-b from-[#120f28]/88 to-[#0d0b1f]/92 shadow-[0_24px_80px_-40px_rgba(56,189,248,0.25)];
   }
 
   .imc-section-title {
@@ -162,13 +175,13 @@ body {
 
   .imc-grid-lines {
     background-image:
-      linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-    background-size: 34px 34px;
+      linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    background-size: 40px 40px;
   }
 
   .imc-title-gradient {
-    background: linear-gradient(90deg, #ffffff 0%, #dbe4ff 55%, #b8a9ff 100%);
+    background: linear-gradient(90deg, #ffffff 0%, #d8d4fe 40%, #c4b5fd 75%, #fca5a5 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;

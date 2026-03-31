@@ -31,8 +31,8 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen w-full space-y-16 sm:space-y-20">
-      <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-950/70 p-6 sm:p-10">
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-violet-500/15 via-transparent to-indigo-500/10" />
+      <section className="relative overflow-hidden rounded-3xl border border-violet-300/20 bg-[#100d23]/85 p-6 sm:p-10">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-violet-500/18 via-transparent to-rose-500/12" />
 
         {maintenance.maintenance_enabled && maintenance.maintenance_banner_enabled && (
           <div className="relative z-20 mb-6 rounded-xl border border-amber-400/30 bg-amber-500/10 p-4">
@@ -48,16 +48,16 @@ export default async function Home() {
 
         <div className="relative z-10 grid gap-10 lg:grid-cols-[1.2fr_0.8fr]">
           <div>
-            <p className="text-xs uppercase tracking-[0.18em] text-white/55">osu!mania 4K Tournament</p>
+            <p className="text-xs uppercase tracking-[0.22em] text-violet-100/70">osu!mania 4K Tournament</p>
             <h1 className="mt-4 text-4xl sm:text-5xl font-black tracking-tight text-white">
               Insanojo Mania Cup
             </h1>
-            <p className="mt-4 max-w-2xl text-base sm:text-lg text-white/70">
+            <p className="mt-4 max-w-2xl text-base sm:text-lg text-white/75">
               Plataforma oficial del torneo: registro, noticias, calendario, mappools y bracket en un solo lugar para jugadores y staff.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
-              <Button asChild className="rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-5">
+              <Button asChild className="rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-semibold px-6 py-5">
                 <Link href="/login">Iniciar sesión con osu!</Link>
               </Button>
               <Button asChild variant="outline" className="rounded-xl border-white/20 bg-transparent text-white hover:bg-white/10">
@@ -69,19 +69,19 @@ export default async function Home() {
             </div>
 
             <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+              <div className="rounded-xl border border-violet-300/20 bg-violet-500/10 p-4">
                 <p className="text-xs uppercase text-white/50">Formato</p>
                 <p className="mt-1 text-sm font-semibold text-white">1v1</p>
               </div>
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+              <div className="rounded-xl border border-violet-300/20 bg-violet-500/10 p-4">
                 <p className="text-xs uppercase text-white/50">Modo</p>
                 <p className="mt-1 text-sm font-semibold text-white">osu!mania 4K</p>
               </div>
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+              <div className="rounded-xl border border-violet-300/20 bg-violet-500/10 p-4">
                 <p className="text-xs uppercase text-white/50">Región</p>
                 <p className="mt-1 text-sm font-semibold text-white">LatAm</p>
               </div>
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+              <div className="rounded-xl border border-violet-300/20 bg-violet-500/10 p-4">
                 <p className="text-xs uppercase text-white/50">Estado</p>
                 <p className="mt-1 text-sm font-semibold text-emerald-300">Activo</p>
               </div>
@@ -92,8 +92,8 @@ export default async function Home() {
             <h2 className="text-lg font-bold text-white">Fases del torneo</h2>
             <div className="mt-4 space-y-3">
               {phases.map((phase, index) => (
-                <div key={phase.title} className="rounded-xl border border-white/10 bg-white/5 p-4">
-                  <p className="text-xs uppercase tracking-wide text-violet-300/90">Fase {index + 1}</p>
+                <div key={phase.title} className="rounded-xl border border-violet-300/20 bg-violet-500/10 p-4">
+                  <p className="text-xs uppercase tracking-wide text-rose-200/90">Fase {index + 1}</p>
                   <p className="mt-1 font-semibold text-white">{phase.title}</p>
                   <p className="mt-1 text-sm text-white/65">{phase.detail}</p>
                 </div>
@@ -104,19 +104,19 @@ export default async function Home() {
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Link href="/rules" className="imc-panel p-5 hover:border-violet-300/30 transition">
+        <Link href="/rules" className="imc-panel p-5 hover:border-fuchsia-300/40 transition">
           <p className="text-sm font-semibold text-white">Reglamento</p>
           <p className="mt-1 text-sm text-white/65">Reglas oficiales y criterios de match.</p>
         </Link>
-        <Link href="/mappools" className="imc-panel p-5 hover:border-violet-300/30 transition">
+        <Link href="/mappools" className="imc-panel p-5 hover:border-fuchsia-300/40 transition">
           <p className="text-sm font-semibold text-white">Mappools</p>
           <p className="mt-1 text-sm text-white/65">Mapas por etapa y mod pool organizado.</p>
         </Link>
-        <Link href="/schedule" className="imc-panel p-5 hover:border-violet-300/30 transition">
+        <Link href="/schedule" className="imc-panel p-5 hover:border-fuchsia-300/40 transition">
           <p className="text-sm font-semibold text-white">Calendario</p>
           <p className="mt-1 text-sm text-white/65">Fechas de cada ronda y hitos del torneo.</p>
         </Link>
-        <Link href="/staff-list" className="imc-panel p-5 hover:border-violet-300/30 transition">
+        <Link href="/staff-list" className="imc-panel p-5 hover:border-fuchsia-300/40 transition">
           <p className="text-sm font-semibold text-white">Equipo Staff</p>
           <p className="mt-1 text-sm text-white/65">Hosts, referees y colaboradores oficiales.</p>
         </Link>

@@ -53,11 +53,11 @@ export default function Navbar() {
   ];
 
   return (
-    <header className="w-full border-b border-white/10 bg-slate-950/75 backdrop-blur-xl sticky top-0 z-50">
+    <header className="w-full border-b border-violet-300/20 bg-[#120f24]/80 backdrop-blur-xl sticky top-0 z-50">
       <nav className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
         <div className="flex items-center justify-between gap-3">
-          <Link href="/" className="inline-flex items-center gap-2 text-base sm:text-xl font-black tracking-wide">
-            <span className="h-2.5 w-2.5 rounded-full bg-violet-300/80" />
+          <Link href="/" className="inline-flex items-center gap-2 text-base sm:text-xl font-black tracking-wide uppercase">
+            <span className="h-2.5 w-2.5 rounded-full bg-rose-300/90" />
             <span className="imc-title-gradient">Insanojo Mania Cup</span>
           </Link>
 
@@ -71,19 +71,19 @@ export default function Navbar() {
             {mobileOpen ? "Cerrar" : "Menú"}
           </button>
 
-          <div className="hidden md:flex gap-2 text-sm font-medium text-white/70 items-center">
+          <div className="hidden md:flex gap-1 text-xs font-semibold text-white/70 items-center uppercase tracking-wide">
             {links.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="rounded-lg px-3 py-2 hover:bg-white/10 hover:text-purple-200 transition"
+                className="rounded-lg px-3 py-2 hover:bg-violet-400/15 hover:text-violet-100 transition"
               >
                 {link.label}
               </Link>
             ))}
 
             {user && (
-              <Link href="/register" className="rounded-lg px-3 py-2 hover:bg-white/10 hover:text-purple-200 transition">
+              <Link href="/register" className="rounded-lg px-3 py-2 hover:bg-violet-400/15 hover:text-violet-100 transition">
                 Registro
               </Link>
             )}
@@ -97,7 +97,7 @@ export default function Navbar() {
             {!user ? (
               <Link
                 href="/login"
-                className="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold transition shadow-md shadow-violet-900/40"
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-semibold transition shadow-md shadow-violet-900/50"
               >
                 Login
               </Link>
@@ -141,7 +141,7 @@ export default function Navbar() {
                   key={link.href}
                   href={link.href}
                   onClick={() => setMobileOpen(false)}
-                  className="rounded-lg border border-white/10 px-3 py-2 text-white/85 hover:bg-white/10"
+                  className="rounded-lg border border-white/10 px-3 py-2 text-white/85 hover:bg-violet-400/15"
                 >
                   {link.label}
                 </Link>
@@ -170,7 +170,7 @@ export default function Navbar() {
               <Link
                 href="/login"
                 onClick={() => setMobileOpen(false)}
-                className="mt-3 block rounded-xl bg-violet-600 hover:bg-violet-500 px-4 py-2 text-center text-sm font-semibold text-white"
+                className="mt-3 block rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-2 text-center text-sm font-semibold text-white"
               >
                 Login
               </Link>
