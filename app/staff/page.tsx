@@ -73,6 +73,11 @@ export default function StaffPage() {
   const [newsImage, setNewsImage] = useState("");
   const [publishingNews, setPublishingNews] = useState(false);
   const [newsError, setNewsError] = useState<string | null>(null);
+  const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);
+  const [maintenanceEndsAt, setMaintenanceEndsAt] = useState("");
+  const [maintenanceMessage, setMaintenanceMessage] = useState("");
+  const [savingMaintenance, setSavingMaintenance] = useState(false);
+  const [maintenanceError, setMaintenanceError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -111,6 +116,23 @@ export default function StaffPage() {
       const newsRes = await fetch("/api/news");
       const newsData = await newsRes.json();
       setNewsList(newsData.news ?? []);
+
+      // Modo mantenimiento
+      const maintenanceRes = await fetch("/api/staff/maintenance");
+      const maintenanceData = await maintenanceRes.json();
+      if (maintenanceRes.ok) {
+        setMaintenanceEnabled(Boolean(maintenanceData.maintenance?.maintenance_enabled));
+        setMaintenanceMessage(maintenanceData.maintenance?.maintenance_message ?? "");
+        if (maintenanceData.maintenance?.maintenance_ends_at) {
+          const date = new Date(maintenanceData.maintenance.maintenance_ends_at);
+          const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+            .toISOString()
+            .slice(0, 16);
+          setMaintenanceEndsAt(local);
+        } else {
+          setMaintenanceEndsAt("");
+        }
+      }
 
       setPageLoading(false);
     }
@@ -187,6 +209,27 @@ export default function StaffPage() {
   async function handleDeleteNews(id: number) {
     const res = await fetch(`/api/news/${id}`, { method: "DELETE" });
     if (res.ok) setNewsList((prev) => prev.filter((n) => n.id !== id));
+  }
+
+  async function handleSaveMaintenance() {
+    setSavingMaintenance(true);
+    setMaintenanceError(null);
+    const res = await fetch("/api/staff/maintenance", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        enabled: maintenanceEnabled,
+        ends_at: maintenanceEndsAt || null,
+        message: maintenanceMessage || null,
+      }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      setMaintenanceError(data.error ?? "No se pudo guardar el mantenimiento.");
+    }
+
+    setSavingMaintenance(false);
   }
 
   if (pageLoading) return <div className="text-white/70">Cargando...</div>;
@@ -384,6 +427,54 @@ export default function StaffPage() {
           })
         )}
       </div>
+
+      {/* ── Modo mantenimiento ── */}
+      <h2 className="mt-14 text-2xl font-bold text-white">Modo mantenimiento</h2>
+      <p className="mt-2 text-white/50 text-sm">
+        Cuando está activo, solo staff (owner/host) puede usar el sitio. Los demás verán pantalla de mantenimiento.
+      </p>
+      <Card className="mt-4 rounded-2xl bg-white/5 border-white/10">
+        <CardContent className="p-6 flex flex-col gap-4">
+          <label className="flex items-center gap-3 text-white">
+            <input
+              type="checkbox"
+              checked={maintenanceEnabled}
+              onChange={(e) => setMaintenanceEnabled(e.target.checked)}
+            />
+            Activar mantenimiento global
+          </label>
+
+          <div>
+            <label className="text-sm text-white/50 mb-1 block">Fin estimado (cuenta regresiva)</label>
+            <input
+              type="datetime-local"
+              value={maintenanceEndsAt}
+              onChange={(e) => setMaintenanceEndsAt(e.target.value)}
+              className="bg-white/5 border-white/10 text-white placeholder:text-white/30 w-full p-2 rounded-lg"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm text-white/50 mb-1 block">Mensaje de mantenimiento</label>
+            <textarea
+              value={maintenanceMessage}
+              onChange={(e) => setMaintenanceMessage(e.target.value)}
+              rows={3}
+              placeholder="Estamos en mantenimiento, volvemos pronto..."
+              className="w-full bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/30 p-3 text-sm resize-y focus:outline-none focus:ring-1 focus:ring-purple-500"
+            />
+          </div>
+
+          {maintenanceError && <p className="text-red-400 text-sm">{maintenanceError}</p>}
+          <Button
+            className="rounded-xl bg-amber-600 hover:bg-amber-500 w-fit"
+            onClick={handleSaveMaintenance}
+            disabled={savingMaintenance}
+          >
+            {savingMaintenance ? "Guardando..." : "Guardar mantenimiento"}
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* ── Noticias ── */}
       <h2 className="mt-14 text-2xl font-bold text-white">Publicar noticia</h2>
