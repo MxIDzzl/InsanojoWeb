@@ -9,6 +9,13 @@ import { getTwitchLiveStatus } from "@/lib/twitch-status";
 
 type NewsItem = { id: number; title: string; content: string; created_at: string };
 
+const phases = [
+  { title: "Registros", detail: "Inscripciones y revisión de elegibilidad" },
+  { title: "Qualifiers", detail: "Siembra inicial para el bracket principal" },
+  { title: "Playoffs", detail: "Eliminación directa con cobertura del staff" },
+  { title: "Finales", detail: "Definición del campeón y premiación" },
+];
+
 export default async function Home() {
   const maintenance = await getMaintenanceConfig();
   const home = await getHomepageSettings();
