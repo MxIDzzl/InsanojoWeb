@@ -70,3 +70,10 @@ alter table if exists public.site_settings
   add column if not exists maintenance_whitelist_text text null,
   add column if not exists maintenance_template text null default 'default',
   add column if not exists maintenance_banner_enabled boolean not null default true;
+
+-- Home pública configurable (hero + roadmap + twitch)
+create table if not exists public.homepage_settings (
+  id bigint primary key,
+  config jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);

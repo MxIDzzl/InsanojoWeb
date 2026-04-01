@@ -78,6 +78,26 @@ type BracketEdge = {
   target_id: number;
 };
 
+type HomepageStage = { label: string; title: string; description: string };
+type HomepageSettings = {
+  eyebrow: string;
+  title: string;
+  description: string;
+  format_label: string;
+  format_value: string;
+  mode_label: string;
+  mode_value: string;
+  region_label: string;
+  region_value: string;
+  status_label: string;
+  status_value: string;
+  coverage_text: string;
+  roadmap_title: string;
+  twitch_channel: string;
+  twitch_enabled: boolean;
+  stages: HomepageStage[];
+};
+
 const ROUNDS = [
   { value: "qualifier", label: "Qualifier" },
   { value: "playoffs", label: "Playoffs" },
@@ -126,6 +146,9 @@ export default function StaffPage() {
   const [maintenanceBannerEnabled, setMaintenanceBannerEnabled] = useState(true);
   const [savingMaintenance, setSavingMaintenance] = useState(false);
   const [maintenanceError, setMaintenanceError] = useState<string | null>(null);
+  const [homepageSettings, setHomepageSettings] = useState<HomepageSettings | null>(null);
+  const [savingHomepageSettings, setSavingHomepageSettings] = useState(false);
+  const [homepageSettingsError, setHomepageSettingsError] = useState<string | null>(null);
   const [mappools, setMappools] = useState<MappoolCollection[]>([]);
   const [poolTitle, setPoolTitle] = useState("");
   const [poolStage, setPoolStage] = useState("");
@@ -221,6 +244,12 @@ export default function StaffPage() {
         } else {
           setMaintenanceEndsAt("");
         }
+      }
+
+      const homeSettingsRes = await fetch("/api/staff/homepage-settings");
+      const homeSettingsData = await homeSettingsRes.json();
+      if (homeSettingsRes.ok) {
+        setHomepageSettings(homeSettingsData.settings ?? null);
       }
 
       const poolsRes = await fetch("/api/mappools");
@@ -349,6 +378,22 @@ export default function StaffPage() {
     }
 
     setSavingMaintenance(false);
+  }
+
+  async function handleSaveHomepageSettings() {
+    if (!homepageSettings) return;
+    setSavingHomepageSettings(true);
+    setHomepageSettingsError(null);
+    const res = await fetch("/api/staff/homepage-settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ settings: homepageSettings }),
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      setHomepageSettingsError(data.error ?? "No se pudo guardar la Home.");
+    }
+    setSavingHomepageSettings(false);
   }
 
 
@@ -1032,6 +1077,56 @@ export default function StaffPage() {
           </Button>
         </CardContent>
       </Card>
+
+      {/* ── Home pública configurable ── */}
+      <h2 className="mt-14 text-2xl font-bold text-white">Home pública (contenido hero)</h2>
+      <p className="mt-2 text-white/50 text-sm">
+        Personaliza textos, roadmap y canal de Twitch mostrado en portada.
+      </p>
+      {homepageSettings && (
+        <Card className="mt-4 rounded-2xl bg-white/5 border-white/10">
+          <CardContent className="p-6 flex flex-col gap-3">
+            <div className="grid md:grid-cols-2 gap-3">
+              <input value={homepageSettings.eyebrow} onChange={(e) => setHomepageSettings((prev) => prev ? ({ ...prev, eyebrow: e.target.value }) : prev)} placeholder="Eyebrow" className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
+              <input value={homepageSettings.title} onChange={(e) => setHomepageSettings((prev) => prev ? ({ ...prev, title: e.target.value }) : prev)} placeholder="Título principal" className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
+            </div>
+            <textarea value={homepageSettings.description} onChange={(e) => setHomepageSettings((prev) => prev ? ({ ...prev, description: e.target.value }) : prev)} rows={3} placeholder="Descripción" className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
+            <div className="grid md:grid-cols-2 gap-3">
+              <input value={homepageSettings.format_label} onChange={(e) => setHomepageSettings((prev) => prev ? ({ ...prev, format_label: e.target.value }) : prev)} placeholder="Label formato" className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
+              <input value={homepageSettings.format_value} onChange={(e) => setHomepageSettings((prev) => prev ? ({ ...prev, format_value: e.target.value }) : prev)} placeholder="Valor formato" className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
+              <input value={homepageSettings.mode_label} onChange={(e) => setHomepageSettings((prev) => prev ? ({ ...prev, mode_label: e.target.value }) : prev)} placeholder="Label modo" className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
+              <input value={homepageSettings.mode_value} onChange={(e) => setHomepageSettings((prev) => prev ? ({ ...prev, mode_value: e.target.value }) : prev)} placeholder="Valor modo" className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
+              <input value={homepageSettings.region_label} onChange={(e) => setHomepageSettings((prev) => prev ? ({ ...prev, region_label: e.target.value }) : prev)} placeholder="Label región" className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
+              <input value={homepageSettings.region_value} onChange={(e) => setHomepageSettings((prev) => prev ? ({ ...prev, region_value: e.target.value }) : prev)} placeholder="Valor región" className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
+              <input value={homepageSettings.status_label} onChange={(e) => setHomepageSettings((prev) => prev ? ({ ...prev, status_label: e.target.value }) : prev)} placeholder="Label estado" className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
+              <input value={homepageSettings.status_value} onChange={(e) => setHomepageSettings((prev) => prev ? ({ ...prev, status_value: e.target.value }) : prev)} placeholder="Valor estado" className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
+            </div>
+            <input value={homepageSettings.coverage_text} onChange={(e) => setHomepageSettings((prev) => prev ? ({ ...prev, coverage_text: e.target.value }) : prev)} placeholder="Texto cobertura" className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
+            <input value={homepageSettings.roadmap_title} onChange={(e) => setHomepageSettings((prev) => prev ? ({ ...prev, roadmap_title: e.target.value }) : prev)} placeholder="Título roadmap" className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
+            <div className="grid md:grid-cols-2 gap-3">
+              <input value={homepageSettings.twitch_channel} onChange={(e) => setHomepageSettings((prev) => prev ? ({ ...prev, twitch_channel: e.target.value }) : prev)} placeholder="Canal Twitch (login)" className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
+              <label className="flex items-center gap-2 text-sm text-white/80">
+                <input type="checkbox" checked={homepageSettings.twitch_enabled} onChange={(e) => setHomepageSettings((prev) => prev ? ({ ...prev, twitch_enabled: e.target.checked }) : prev)} />
+                Mostrar estado de Twitch en Home
+              </label>
+            </div>
+            <p className="text-sm text-white/60">Stages (máx. 8)</p>
+            <div className="grid gap-2">
+              {homepageSettings.stages.map((stage, idx) => (
+                <div key={`home-stage-${idx}`} className="grid md:grid-cols-3 gap-2">
+                  <input value={stage.label} onChange={(e) => setHomepageSettings((prev) => prev ? ({ ...prev, stages: prev.stages.map((entry, stageIdx) => stageIdx === idx ? { ...entry, label: e.target.value } : entry) }) : prev)} placeholder="Stage label" className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
+                  <input value={stage.title} onChange={(e) => setHomepageSettings((prev) => prev ? ({ ...prev, stages: prev.stages.map((entry, stageIdx) => stageIdx === idx ? { ...entry, title: e.target.value } : entry) }) : prev)} placeholder="Título fase" className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
+                  <input value={stage.description} onChange={(e) => setHomepageSettings((prev) => prev ? ({ ...prev, stages: prev.stages.map((entry, stageIdx) => stageIdx === idx ? { ...entry, description: e.target.value } : entry) }) : prev)} placeholder="Descripción fase" className="bg-white/5 border border-white/10 text-white p-2 rounded-lg" />
+                </div>
+              ))}
+            </div>
+            {homepageSettingsError && <p className="text-sm text-red-300">{homepageSettingsError}</p>}
+            <Button className="w-fit rounded-xl bg-fuchsia-600 hover:bg-fuchsia-500" onClick={handleSaveHomepageSettings} disabled={savingHomepageSettings}>
+              {savingHomepageSettings ? "Guardando..." : "Guardar Home pública"}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* ── Noticias ── */}
       <h2 className="mt-14 text-2xl font-bold text-white">Publicar noticia</h2>

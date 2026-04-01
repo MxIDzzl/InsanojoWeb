@@ -4,13 +4,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
 import { getMaintenanceConfig } from "@/lib/site-maintenance";
 import MaintenanceCountdown from "@/components/maintenance-countdown";
+import { getHomepageSettings } from "@/lib/homepage-settings";
+import { getTwitchLiveStatus } from "@/lib/twitch-status";
 
-type NewsItem = {
-  id: number;
-  title: string;
-  content: string;
-  created_at: string;
-};
+type NewsItem = { id: number; title: string; content: string; created_at: string };
 
 const phases = [
   { title: "Registros", detail: "Inscripciones y revisión de elegibilidad" },
@@ -21,6 +18,8 @@ const phases = [
 
 export default async function Home() {
   const maintenance = await getMaintenanceConfig();
+  const home = await getHomepageSettings();
+  const twitch = home.twitch_enabled ? await getTwitchLiveStatus(home.twitch_channel) : null;
   const { data: newsData } = await supabase
     .from("news")
     .select("id, title, content, created_at")
@@ -48,12 +47,12 @@ export default async function Home() {
 
         <div className="relative z-10 grid gap-10 lg:grid-cols-[1.2fr_0.8fr]">
           <div>
-            <p className="text-xs uppercase tracking-[0.22em] text-violet-100/70">osu!mania 4K Tournament</p>
+            <p className="text-xs uppercase tracking-[0.22em] text-violet-100/70">{home.eyebrow}</p>
             <h1 className="mt-4 text-4xl sm:text-5xl font-black tracking-tight text-white uppercase">
-              Insanojo Mania Cup
+              {home.title}
             </h1>
             <p className="mt-4 max-w-2xl text-base sm:text-lg text-white/75">
-              Plataforma oficial del torneo: registro, fixtures, mappools y bracket en un solo lugar para jugadores y staff.
+              {home.description}
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
@@ -70,36 +69,50 @@ export default async function Home() {
 
             <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
               <div className="rounded-xl border border-violet-300/20 bg-violet-500/10 p-4">
-                <p className="text-xs uppercase text-white/50">Formato</p>
-                <p className="mt-1 text-sm font-semibold text-white">1v1</p>
+                <p className="text-xs uppercase text-white/50">{home.format_label}</p>
+                <p className="mt-1 text-sm font-semibold text-white">{home.format_value}</p>
               </div>
               <div className="rounded-xl border border-violet-300/20 bg-violet-500/10 p-4">
-                <p className="text-xs uppercase text-white/50">Modo</p>
-                <p className="mt-1 text-sm font-semibold text-white">osu!mania 4K</p>
+                <p className="text-xs uppercase text-white/50">{home.mode_label}</p>
+                <p className="mt-1 text-sm font-semibold text-white">{home.mode_value}</p>
               </div>
               <div className="rounded-xl border border-violet-300/20 bg-violet-500/10 p-4">
-                <p className="text-xs uppercase text-white/50">Región</p>
-                <p className="mt-1 text-sm font-semibold text-white">LatAm</p>
+                <p className="text-xs uppercase text-white/50">{home.region_label}</p>
+                <p className="mt-1 text-sm font-semibold text-white">{home.region_value}</p>
               </div>
               <div className="rounded-xl border border-violet-300/20 bg-violet-500/10 p-4">
-                <p className="text-xs uppercase text-white/50">Estado</p>
-                <p className="mt-1 text-sm font-semibold text-emerald-300">Activo</p>
+                <p className="text-xs uppercase text-white/50">{home.status_label}</p>
+                <p className="mt-1 text-sm font-semibold text-emerald-300">{home.status_value}</p>
               </div>
             </div>
             <div className="mt-5 inline-flex items-center gap-2 rounded-md border border-fuchsia-300/25 bg-fuchsia-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-fuchsia-200">
               <span className="inline-block h-2 w-2 rounded-full bg-fuchsia-300" />
-              Broadcast & Match Coverage Activo
+              {home.coverage_text}
             </div>
+            {home.twitch_enabled && (
+              <div className={`mt-3 rounded-md border px-3 py-2 text-xs ${twitch?.isLive ? "border-emerald-300/30 bg-emerald-500/10 text-emerald-200" : "border-white/15 bg-white/5 text-white/70"}`}>
+                <p className="font-semibold uppercase tracking-wide">
+                  Twitch: {twitch?.isLive ? "En vivo" : "Desconectado"} ({home.twitch_channel})
+                </p>
+                {twitch?.isLive ? (
+                  <p className="mt-1 text-white/80">
+                    {twitch.title ?? "Sin descripción"}{twitch.viewerCount ? ` · ${twitch.viewerCount} viewers` : ""}
+                  </p>
+                ) : (
+                  <p className="mt-1 text-white/60">No hay transmisión activa ahora mismo.</p>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="imc-panel p-5 sm:p-6">
-            <h2 className="text-lg font-bold uppercase tracking-wide text-white">Match Roadmap</h2>
+            <h2 className="text-lg font-bold uppercase tracking-wide text-white">{home.roadmap_title}</h2>
             <div className="mt-4 space-y-3">
-              {phases.map((phase, index) => (
+              {home.stages.map((phase, index) => (
                 <div key={phase.title} className="rounded-xl border border-violet-300/20 bg-violet-500/10 p-4">
-                  <p className="text-xs uppercase tracking-wide text-rose-200/90">Stage {index + 1}</p>
+                  <p className="text-xs uppercase tracking-wide text-rose-200/90">{phase.label || `Stage ${index + 1}`}</p>
                   <p className="mt-1 font-semibold text-white">{phase.title}</p>
-                  <p className="mt-1 text-sm text-white/65">{phase.detail}</p>
+                  <p className="mt-1 text-sm text-white/65">{phase.description}</p>
                 </div>
               ))}
             </div>
